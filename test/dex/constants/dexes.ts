@@ -1,0 +1,3 @@
+// Base Mainnet dexes for testing
+export const UNISWAP_V2_ROUTER_ADDRESS_BASE = '0x4752ba5dbc23f44d87826276bf6fd6b1c372ad24';
+export const UNISWAP_V2_FACTORY_ADDRESS_BASE = '0x8909Dc15e40173Ff4699343b6eB8132c65e18eC6';

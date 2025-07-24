@@ -38,6 +38,7 @@ export abstract class DexBase {
         return this._factoryContract.target as string;
     }
 
+    public abstract getFactoryAddress(): Promise<string>;
     public abstract getPoolAddress(path: (string | any)[]): Promise<any>;
     public abstract getTokenPrice(path: (string | any)[]): Promise<any>;
     public abstract getEncodedSwap(
