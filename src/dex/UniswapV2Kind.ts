@@ -16,6 +16,7 @@ import { sharkswapV2Addresses } from "./addresses/uniswap-v2-kind/sharkswap-v2";
 import { swapbasedammV2Addresses } from "./addresses/uniswap-v2-kind/swapbased-amm-v2";
 import { leetswapV2Addresses } from "./addresses/uniswap-v2-kind/leetswap-v2";
 import { icecreamswapV2Addresses } from "./addresses/uniswap-v2-kind/icecreamswap-v2";
+import { elkswapV2Addresses } from "./addresses/uniswap-v2-kind/elkswap-v2";
 
 export class DexBaseKindUniswapV2 extends DexBase {
     constructor(
@@ -314,7 +315,7 @@ export class ElkV2 extends DexBaseKindUniswapV2 {
         factoryAddress: string,
         name?: string,
     }) {
-        const addresses = icecreamswapV2Addresses.get(network.id)!;
+        const addresses = elkswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
