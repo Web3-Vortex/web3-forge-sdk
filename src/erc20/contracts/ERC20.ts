@@ -1,4 +1,4 @@
-import { Contract, Wallet, JsonRpcSigner, type ContractRunner } from "ethers";
+import { Contract, Wallet, JsonRpcSigner, type ContractRunner, TransactionResponse } from "ethers";
 import { erc20Abi } from "../abi/erc20-abi";
 import { isObjectAddressable } from "../utils/is-object-addressable";
 import { IAddressable } from "../../types/IAddressable";
@@ -140,11 +140,20 @@ export class ERC20 {
         }
     }
 
-    public async approve(spender: string, amount: bigint): Promise<boolean> {
+    public async approve(spender: string, amount: bigint, overrides?: {
+        gasLimit?: number,
+        maxFeePerGas?: number,
+        maxPriorityFeePerGas?: number,
+    }): Promise<TransactionResponse> {
         try {
             if (!this._contract.approve) {
                 throw new Error("`function approve` is not supported by this _contract. Or update your abi");
             }
+
+            if(overrides) {
+                return await this._contract.approve(spender, amount, overrides);
+            }
+
             return await this._contract.approve(spender, amount);
         } catch (error) {
             throw error;

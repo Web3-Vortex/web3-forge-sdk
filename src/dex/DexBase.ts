@@ -40,17 +40,23 @@ export abstract class DexBase {
 
     public abstract getFactoryAddress(): Promise<string>;
     public abstract getPoolAddress(path: (string | any)[]): Promise<any>;
+    public abstract getPoolCount(): Promise<number>;
+    public abstract getPoolReserves(path: (string | any)[]): Promise<any>;
+    public abstract getPoolAddressByIndex(index: number): Promise<string>;
     public abstract getTokenPrice(path: (string | any)[]): Promise<any>;
     public abstract getEncodedSwap(
         amountsIn: bigint,
         path: (string | any)[],
         sendTo: string,
+        slippage: number,
         ...params: any
     ): {
         data: string,
         topHalf: string,
         bottomHalf: string,
     }
+
+    public abstract getReversedPath(path: (string | any)[]): (string | any)[];
 
     public abstract splitPath(path: (string | any)[]): (string | any)[][];
     public abstract simulateSwap(

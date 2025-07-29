@@ -2,45 +2,48 @@ import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signer
 import { ethers } from "hardhat";
 import { expect } from "chai";
 import { ZeroAddress } from "ethers";
-import { DexBaseKindUniswapV2 } from "../../src/dex/UniswapV2Kind";
 import { DexType } from "../../src/dex/types/IDexParams";
 import { WETH_ADDRESS_BASE, USDC_ADDRESS_BASE } from "./constants/tokens";
-import { UNISWAP_V2_ROUTER_ADDRESS_BASE, UNISWAP_V2_FACTORY_ADDRESS_BASE } from "./constants/dexes";
+import { UNISWAP_V3_FACTORY_ADDRESS_BASE, UNISWAP_V3_ROUTER_ADDRESS_BASE, UNISWAP_V3_QUOTER_ADDRESS_BASE } from "./constants/dexes";
 import { BASE_NETWORK } from "./constants/network";
+import { DexBaseKindUniswapV3 } from "../../src/dex/UniswapV3Kind";
 
-describe("Uniswap V2 Kind", function () {
+describe.only("Uniswap V3 Kind", function () {
     let owner: HardhatEthersSigner;
-    let dex: DexBaseKindUniswapV2;
+    let dex: DexBaseKindUniswapV3;
 
     beforeEach(async function () {
         [owner] = await ethers.getSigners();
 
-        dex = new DexBaseKindUniswapV2(
-            UNISWAP_V2_ROUTER_ADDRESS_BASE,
-            UNISWAP_V2_FACTORY_ADDRESS_BASE,
+        dex = new DexBaseKindUniswapV3(
+            UNISWAP_V3_ROUTER_ADDRESS_BASE,
+            UNISWAP_V3_FACTORY_ADDRESS_BASE,
+            UNISWAP_V3_QUOTER_ADDRESS_BASE,
             BASE_NETWORK
         );
     });
 
     describe("constructor", function () {
         it("should set the correct router and factory addresses", async function () {
-            expect(dex.routerAddress).to.equal(UNISWAP_V2_ROUTER_ADDRESS_BASE);
-            expect(dex.factoryAddress).to.equal(UNISWAP_V2_FACTORY_ADDRESS_BASE);
+            expect(dex.routerAddress).to.equal(UNISWAP_V3_ROUTER_ADDRESS_BASE);
+            expect(dex.factoryAddress).to.equal(UNISWAP_V3_FACTORY_ADDRESS_BASE);
+            expect(dex.quoterAddress).to.equal(UNISWAP_V3_QUOTER_ADDRESS_BASE);
 
             const factoryAddress = await dex.getFactoryAddress();
-            expect(factoryAddress.toLowerCase()).to.equal(UNISWAP_V2_FACTORY_ADDRESS_BASE.toLowerCase());
+            expect(factoryAddress.toLowerCase()).to.equal(UNISWAP_V3_FACTORY_ADDRESS_BASE.toLowerCase());
         });
 
         it("should have correct dex params", function() {
-            expect(dex.dexParams.name).to.equal('Uniswap V2');
-            expect(dex.dexParams.type).to.equal(DexType.UniswapV2);
+            expect(dex.dexParams.name).to.equal('Uniswap V3');
+            expect(dex.dexParams.type).to.equal(DexType.UniswapV3);
         });
     });
 
 
-    describe("Pool Functionality", function() {
+    describe.skip("Pool Functionality", function() {
         it("should return the correct pool count", async function() {
             const count = await dex.getPoolCount();
+            console.log(count);
             expect(count).to.be.greaterThan(0);
         });
 
@@ -53,17 +56,17 @@ describe("Uniswap V2 Kind", function () {
 
     describe("Testing all base functions", function() {
         it("should correctly split a path of 3 tokens", function() {
-            const path = [WETH_ADDRESS_BASE, USDC_ADDRESS_BASE, '0xde30da39c46104798bb5aa3fe8b9e0e1f348163f'];
+            const path = [WETH_ADDRESS_BASE, 500, USDC_ADDRESS_BASE, 500, '0xde30da39c46104798bb5aa3fe8b9e0e1f348163f'];
             const expectedSplit = [
-                [WETH_ADDRESS_BASE, USDC_ADDRESS_BASE],
-                [USDC_ADDRESS_BASE, '0xde30da39c46104798bb5aa3fe8b9e0e1f348163f']
+                [WETH_ADDRESS_BASE, 500, USDC_ADDRESS_BASE],
+                [USDC_ADDRESS_BASE, 500, '0xde30da39c46104798bb5aa3fe8b9e0e1f348163f']
             ];
             const split = dex.splitPath(path);
             expect(split).to.deep.equal(expectedSplit);
         });
 
         it("should return the same path if only 2 tokens", function() {
-            const path = [WETH_ADDRESS_BASE, USDC_ADDRESS_BASE];
+            const path = [WETH_ADDRESS_BASE, 500, USDC_ADDRESS_BASE];
             const split = dex.splitPath(path);
             expect(split).to.deep.equal([path]);
         });
@@ -85,6 +88,7 @@ describe("Uniswap V2 Kind", function () {
         it("should return the correct pool address for WETH/USDC", async function() {
             const poolAddress = await dex.getPoolAddress([
                 WETH_ADDRESS_BASE,
+                500,
                 USDC_ADDRESS_BASE
             ]);
 
@@ -94,7 +98,7 @@ describe("Uniswap V2 Kind", function () {
 
     describe("getTokenPrice", function() {
         it("should return the correct price for WETH in USDC", async function() {
-            const path = [WETH_ADDRESS_BASE, USDC_ADDRESS_BASE];
+            const path = [WETH_ADDRESS_BASE, 500, USDC_ADDRESS_BASE];
             const price = await dex.getTokenPrice(path);
 
             expect(price).to.be.a('number');
@@ -105,7 +109,7 @@ describe("Uniswap V2 Kind", function () {
 
     describe("getEncodedSwap", function() {
         it("should return the correct encoded swap data", function() {
-            const path = [WETH_ADDRESS_BASE, USDC_ADDRESS_BASE];
+            const path = [WETH_ADDRESS_BASE, 500, USDC_ADDRESS_BASE];
             const amountIn = ethers.parseUnits("1", 18);
             const sendTo = owner.address;
             

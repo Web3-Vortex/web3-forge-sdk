@@ -3,7 +3,7 @@ import { Contract, parseUnits } from "ethers";
 import { INetworkConfig, Network } from "../types/network";
 import { DexBase } from "./DexBase";
 import { DexType } from "./types/IDexParams";
-import { routerAbi, factoryAbi } from "./abi/uniswap-v2";
+import { routerAbi, factoryAbi, pairAbi } from "./abi/uniswap-v2";
 import { erc20Abi } from "../erc20/abi/erc20-abi";
 import { cutEncodedDataParams } from "../utils/cut-encoded-data-params";
 import { uniswapV2Addresses } from "./addresses/uniswap-v2-kind/uniswap-v2";
@@ -17,6 +17,12 @@ import { swapbasedammV2Addresses } from "./addresses/uniswap-v2-kind/swapbased-a
 import { leetswapV2Addresses } from "./addresses/uniswap-v2-kind/leetswap-v2";
 import { icecreamswapV2Addresses } from "./addresses/uniswap-v2-kind/icecreamswap-v2";
 import { elkswapV2Addresses } from "./addresses/uniswap-v2-kind/elkswap-v2";
+import { rocketswapV2Addresses } from "./addresses/uniswap-v2-kind/rocketswap-v2";
+import { baseswapV2Addresses } from "./addresses/uniswap-v2-kind/baseswap-v2";
+import { deltaswapV2Addresses } from "./addresses/uniswap-v2-kind/deltaswap-v2";
+import { ringswapV2Addresses } from "./addresses/uniswap-v2-kind/ringswap-v2";
+import { ERC20 } from "../erc20/contracts/ERC20";
+import { reverseCopy } from "../utils/reverse-copy";
 
 export class DexBaseKindUniswapV2 extends DexBase {
     constructor(
@@ -24,6 +30,8 @@ export class DexBaseKindUniswapV2 extends DexBase {
         factoryAddress_: string,
         network: INetworkConfig,
         name?: string,
+        routerAbi_?: any,
+        factoryAbi_?: any,
     ) {
         super({
             network,
@@ -31,11 +39,11 @@ export class DexBaseKindUniswapV2 extends DexBase {
             name: name ?? 'Uniswap V2',
             router: {
                 address: routerAddress_,
-                abi: routerAbi,
+                abi: routerAbi_ ?? routerAbi,
             },
             factory: {
                 address: factoryAddress_,
-                abi: factoryAbi,
+                abi: factoryAbi_ ?? factoryAbi,
             },
         });
     }
@@ -56,6 +64,39 @@ export class DexBaseKindUniswapV2 extends DexBase {
 
     public async getPoolAddress(path: string[]): Promise<string> {
         return await this._factoryContract.getPair(path[0], path[1]);
+    }
+
+    public async getPoolCount(): Promise<number> {
+        return Number(await this._factoryContract.allPairsLength());
+    }
+
+    public async getPoolAddressByIndex(index: number): Promise<string> {
+        return await this._factoryContract.allPairs(index);
+    }
+
+    public async getPoolReserves(path: string[]): Promise<{
+        reserve0: number,
+        reserve1: number,
+        blockTimestampLast: number,
+    }> {
+        const pair = await this.getPoolAddress(path);
+        const pairContract = new Contract(pair, pairAbi, this._provider);
+        const [reserve0, reserve1, blockTimestampLast] = await pairContract.getReserves();
+
+        const token0 = new ERC20(path[0], this._provider);
+        const token1 = new ERC20(path[path.length - 1], this._provider);
+
+        const [decimals0, decimals1] = await Promise.all([
+            token0.getDecimals(),
+            token1.getDecimals(),
+            pairContract.getReserves()
+        ]);
+
+        return {
+            reserve0: Number(reserve0) / 10**Number(decimals0),
+            reserve1: Number(reserve1) / 10**Number(decimals1),
+            blockTimestampLast: Number(blockTimestampLast),
+        };
     }
 
     public async getFactoryAddress(): Promise<string> {
@@ -80,19 +121,21 @@ export class DexBaseKindUniswapV2 extends DexBase {
     public getEncodedSwap(
         amountsIn: bigint,
         path: (string | any)[],
-        sendTo: string
+        sendTo: string,
+        slippage?: number,
     ): {
         data: string,
         topHalf: string,
         bottomHalf: string,
     } {
         const deadline = Math.floor(Date.now() / 1000) + 10000;
+        const amountOutMin = slippage ? amountsIn * BigInt(10000 - slippage) / BigInt(10000) : 0;
 
         const data = this._routerContract.interface.encodeFunctionData(
             'swapExactTokensForTokens',
             [
                 amountsIn,
-                0,
+                amountOutMin,
                 path,
                 sendTo,
                 deadline
@@ -110,17 +153,29 @@ export class DexBaseKindUniswapV2 extends DexBase {
         from: string,
         amountsIn: bigint,
         path: (string | any)[],
-        sendTo: string
+        sendTo?: string,
+        overrides?: {
+            gasLimit?: number,
+            maxFeePerGas?: number,
+            maxPriorityFeePerGas?: number,
+        }
     ) {
         const deadline = Math.floor(Date.now() / 1000) + 600;
         return await this._routerContract.swapExactTokensForTokens.staticCallResult(
             amountsIn,
             0,
             path,
-            sendTo,
+            sendTo ?? from,
             deadline,
-            {from}
+            {
+                ...overrides,
+                from,
+            }
         );
+    }
+
+    public getReversedPath(path: string[]): string[] {
+        return reverseCopy<string>(path);
     }
 }
 
@@ -321,6 +376,91 @@ export class ElkV2 extends DexBaseKindUniswapV2 {
             overrides?.factoryAddress ?? addresses.factory,
             network,
             overrides?.name ?? 'Elk Swap V2'
+        );
+    }
+}
+
+
+export class RocketSwapV2 extends DexBaseKindUniswapV2 {
+    constructor(network: INetworkConfig, overrides?: {
+        routerAddress: string,
+        factoryAddress: string,
+        name?: string,
+    }) {
+        const addresses = rocketswapV2Addresses.get(network.id)!;
+        super(
+            overrides?.routerAddress ?? addresses.router,
+            overrides?.factoryAddress ?? addresses.factory,
+            network,
+            overrides?.name ?? 'Rocket Swap V2'
+        );
+    }
+}
+
+
+// export class DiamondSwapV2 extends DexBaseKindUniswapV2 {
+//     constructor(network: INetworkConfig, overrides?: {
+//         routerAddress: string,
+//         factoryAddress: string,
+//         name?: string,
+//     }) {
+//         const addresses = diamondswapV2Addresses.get(network.id)!;
+//         super(
+//             overrides?.routerAddress ?? addresses.router,
+//             overrides?.factoryAddress ?? addresses.factory,
+//             network,
+//             overrides?.name ?? 'Diamond Swap V2'
+//         );
+//     }
+// }
+
+
+export class BaseSwapV2 extends DexBaseKindUniswapV2 {
+    constructor(network: INetworkConfig, overrides?: {
+        routerAddress: string,
+        factoryAddress: string,
+        name?: string,
+    }) {
+        const addresses = baseswapV2Addresses.get(network.id)!;
+        super(
+            overrides?.routerAddress ?? addresses.router,
+            overrides?.factoryAddress ?? addresses.factory,
+            network,
+            overrides?.name ?? 'Base Swap V2'
+        );
+    }
+}
+
+
+export class DeltaSwapV2 extends DexBaseKindUniswapV2 {
+    constructor(network: INetworkConfig, overrides?: {
+        routerAddress: string,
+        factoryAddress: string,
+        name?: string,
+    }) {
+        const addresses = deltaswapV2Addresses.get(network.id)!;
+        super(
+            overrides?.routerAddress ?? addresses.router,
+            overrides?.factoryAddress ?? addresses.factory,
+            network,
+            overrides?.name ?? 'Delta Swap V2'
+        );
+    }
+}
+
+
+export class RingSwapV2 extends DexBaseKindUniswapV2 {
+    constructor(network: INetworkConfig, overrides?: {
+        routerAddress: string,
+        factoryAddress: string,
+        name?: string,
+    }) {
+        const addresses = ringswapV2Addresses.get(network.id)!;
+        super(
+            overrides?.routerAddress ?? addresses.router,
+            overrides?.factoryAddress ?? addresses.factory,
+            network,
+            overrides?.name ?? 'Ring Swap V2'
         );
     }
 }
