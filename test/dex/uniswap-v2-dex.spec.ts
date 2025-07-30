@@ -23,8 +23,9 @@ import {
 import { WETH_ADDRESS_BASE, USDC_ADDRESS_BASE } from "./constants/tokens";
 import { BASE_NETWORK } from "./constants/network";
 import { ERC20 } from "../../src/erc20/contracts/ERC20";
+import { IxSwapV2 } from "../../src/dex/IxSwapV2";
 
-describe("Uniswap V2 Dexes for Network: Base", function () {
+describe.only("Uniswap V2 Dexes for Network: Base", function () {
     let owner: HardhatEthersSigner;
 
     // Dexes
@@ -44,6 +45,8 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
     let leetSwapV2: LeetSwapV2;
     let icecreamSwapV2: IcecreamSwapV2;
     let elkV2: ElkV2;
+
+    let ixsswapv2: IxSwapV2;
 
     beforeEach(async function () {
         // [owner] = await ethers.getSigners();
@@ -79,6 +82,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
         leetSwapV2 = new LeetSwapV2(BASE_NETWORK);
         icecreamSwapV2 = new IcecreamSwapV2(BASE_NETWORK);
         elkV2 = new ElkV2(BASE_NETWORK);
+        ixsswapv2 = new IxSwapV2(BASE_NETWORK);
     });
 
 
@@ -100,6 +104,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             const count13 = await leetSwapV2.getPoolCount();
             const count14 = await icecreamSwapV2.getPoolCount();
             const count15 = await elkV2.getPoolCount();
+            const count16 = await ixsswapv2.getPoolCount();
 
             expect(count0).to.be.greaterThan(0);
             expect(count1).to.be.greaterThan(0);
@@ -117,6 +122,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             expect(count13).to.be.greaterThan(0);
             expect(count14).to.be.greaterThan(0);
             expect(count15).to.be.greaterThan(0);
+            expect(count16).to.be.greaterThan(0);
         });
 
         it("should return the correct pool address by index", async function() {
@@ -136,6 +142,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             const count13 = await leetSwapV2.getPoolAddressByIndex(0);
             const count14 = await icecreamSwapV2.getPoolAddressByIndex(0);
             const count15 = await elkV2.getPoolAddressByIndex(0);
+            const count16 = await ixsswapv2.getPoolAddressByIndex(0);
 
             expect(count0).to.be.not.equal(ZeroAddress);
             expect(count1).to.be.not.equal(ZeroAddress);
@@ -153,6 +160,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             expect(count13).to.be.not.equal(ZeroAddress);
             expect(count14).to.be.not.equal(ZeroAddress);
             expect(count15).to.be.not.equal(ZeroAddress);
+            expect(count16).to.be.not.equal(ZeroAddress);
         });
 
         it("should return the correct factory address for each dex", async function() {
@@ -172,6 +180,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             const count13 = await leetSwapV2.getFactoryAddress();
             const count14 = await icecreamSwapV2.getFactoryAddress();
             const count15 = await elkV2.getFactoryAddress();
+            const count16 = await ixsswapv2.getFactoryAddress();
 
             expect(count0.toLowerCase()).to.be.equal(alienBaseArea51V2.factoryAddress.toLowerCase());
             expect(count1.toLowerCase()).to.be.equal(alienBaseV2.factoryAddress.toLowerCase());
@@ -189,6 +198,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             expect(count13.toLowerCase()).to.be.equal(leetSwapV2.factoryAddress.toLowerCase());
             expect(count14.toLowerCase()).to.be.equal(icecreamSwapV2.factoryAddress.toLowerCase());
             expect(count15.toLowerCase()).to.be.equal(elkV2.factoryAddress.toLowerCase());
+            expect(count16.toLowerCase()).to.be.equal(ixsswapv2.factoryAddress.toLowerCase());
         });
 
         it("should return the correct pool address for each dex", async function() {
@@ -209,6 +219,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             const count13 = await leetSwapV2.getPoolAddress(path);
             const count14 = await icecreamSwapV2.getPoolAddress(path);
             const count15 = await elkV2.getPoolAddress(path);
+            const count16 = await ixsswapv2.getPoolAddress(path);
 
 
             expect(count0.toLowerCase()).to.be.equal(ZeroAddress);
@@ -227,6 +238,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             expect(count13.toLowerCase()).to.be.not.equal(ZeroAddress);
             expect(count14.toLowerCase()).to.be.not.equal(ZeroAddress);
             expect(count15.toLowerCase()).to.be.not.equal(ZeroAddress);
+            expect(count16.toLowerCase()).to.be.equal(ZeroAddress);
         });
 
 
@@ -248,7 +260,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             const count13 = await leetSwapV2.getPoolReserves(path);
             const count14 = await icecreamSwapV2.getPoolReserves(path);
             const count15 = await elkV2.getPoolReserves(path);
-
+            // const count16 = await ixsswapv2.getPoolReserves(path);
 
             // expect(count0.reserve0).to.be.equal(0);
             expect(count1.reserve0).to.be.not.equal(0);
@@ -266,6 +278,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             expect(count13.reserve0).to.be.not.equal(0);
             expect(count14.reserve0).to.be.not.equal(0);
             expect(count15.reserve0).to.be.not.equal(0);
+            // expect(count16.reserve0).to.be.not.equal(0);
         });
 
 
@@ -287,7 +300,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             const count13 = await leetSwapV2.getTokenPrice(path);
             const count14 = await icecreamSwapV2.getTokenPrice(path);
             const count15 = await elkV2.getTokenPrice(path);
-
+            // const count16 = await ixsswapv2.getTokenPrice(path);
 
             // expect(count0).to.be.equal(0);
             expect(count1).to.be.not.equal(0);
@@ -305,6 +318,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             expect(count13).to.be.not.equal(0);
             expect(count14).to.be.not.equal(0);
             expect(count15).to.be.not.equal(0);
+            // expect(count16).to.be.not.equal(0);
         });
 
 
@@ -329,6 +343,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             const count13 = await leetSwapV2.getEncodedSwap(amountIn, path, owner.address);
             const count14 = await icecreamSwapV2.getEncodedSwap(amountIn, path, owner.address);
             const count15 = await elkV2.getEncodedSwap(amountIn, path, owner.address);
+            const count16 = await ixsswapv2.getEncodedSwap(amountIn, path, owner.address);
 
             console.log(count0);
 
@@ -410,6 +425,9 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             const txApprove15 = await usdc.approve(elkV2.routerAddress, amountIn, overrides);
             await txApprove15.wait();
 
+            const txApprove16 = await usdc.approve(ixsswapv2.routerAddress, amountIn, overrides);
+            await txApprove16.wait();
+
 
             // const count0 = await alienBaseArea51V2.simulateSwap(owner.address, amountIn, path);
             const count1 = await alienBaseV2.simulateSwap(owner.address, amountIn, path, owner.address);
@@ -427,6 +445,7 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
             const count13 = await leetSwapV2.simulateSwap(owner.address, amountIn, path, owner.address);
             const count14 = await icecreamSwapV2.simulateSwap(owner.address, amountIn, path, owner.address);
             const count15 = await elkV2.simulateSwap(owner.address, amountIn, path, owner.address);
+            // const count16 = await ixsswapv2.simulateSwap(owner.address, amountIn, path, owner.address);
 
             // console.log(count0);
 

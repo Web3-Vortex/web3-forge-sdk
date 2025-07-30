@@ -20,7 +20,7 @@ import { WETH_ADDRESS_BASE, USDC_ADDRESS_BASE } from "./constants/tokens";
 import { BASE_NETWORK } from "./constants/network";
 import { ERC20 } from "../../src/erc20/contracts/ERC20";
 
-describe.only("Uniswap V3 Dexes for Network: Base", function () {
+describe("Uniswap V3 Dexes for Network: Base", function () {
     let owner: HardhatEthersSigner;
 
     // Dexes

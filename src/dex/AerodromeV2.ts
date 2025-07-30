@@ -1,6 +1,5 @@
 import { Contract, parseUnits, formatUnits } from "ethers";
 import { INetworkConfig } from "../types/network";
-import { DexBaseKindUniswapV2 } from "./UniswapV2Kind";
 import { erc20Abi } from "../erc20/abi/erc20-abi";
 import { aerodromeV2RouterAbi, aerodromeV2FactoryAbi, aerodromeV2CLFactoryAbi } from "./abi/aerodrome";
 import { aerodromeV2Addresses } from "./addresses/uniswap-v2-kind/aerodrome-v2";
