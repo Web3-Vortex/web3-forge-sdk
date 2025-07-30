@@ -1,4 +1,4 @@
-import { Contract, EventLog, formatUnits, parseUnits, solidityPacked, ZeroAddress } from "ethers";
+import { Contract, formatUnits, parseUnits, solidityPacked, ZeroAddress } from "ethers";
 
 import { INetworkConfig } from "../types/network";
 import { DexBase } from "./DexBase";
@@ -22,7 +22,7 @@ import { wagmiV3Addresses } from "./addresses/uniswap-v3-kind/wagmi-v3";
 import { alienbaseV3Addresses } from "./addresses/uniswap-v3-kind/alienbase-v3";
 
 export class DexBaseKindUniswapV3 extends DexBase {
-    private readonly _quoterContract: Contract;
+    private readonly _quoterContract: Contract | null = null;
 
     constructor(
         routerAddress_: string,
@@ -50,20 +50,29 @@ export class DexBaseKindUniswapV3 extends DexBase {
             },
         });
 
-        this._quoterContract = new Contract(
-            quoterAddress_,
-            overrides?.quoterAbi ?? quoterAbi,
-            this._provider
-        );
+        if(quoterAddress_ !== ZeroAddress || quoterAddress_ !== '') {
+            this._quoterContract = new Contract(
+                quoterAddress_,
+                overrides?.quoterAbi ?? quoterAbi,
+                this._provider
+            );
+        }
     }
 
 
     public get quoterAddress(): string {
-        return this._quoterContract.target as string;
+        if(this._quoterContract !== null) {
+            return this._quoterContract.target as string;
+        }
+        return ZeroAddress;
     }
 
 
     public async getTokenPrice(path: (string | number | bigint)[]): Promise<number> {
+        if(this._quoterContract === null) {
+            throw new Error('Quoter contract is not initialized');
+        }
+
         const token = new Contract(path[0] as string, erc20Abi, this._provider);
         const tokenQuote = new Contract(path[path.length - 1] as string, erc20Abi, this._provider);
 

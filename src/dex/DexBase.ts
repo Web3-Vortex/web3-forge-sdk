@@ -40,9 +40,9 @@ export abstract class DexBase {
 
     public abstract getFactoryAddress(): Promise<string>;
     public abstract getPoolAddress(path: (string | any)[]): Promise<any>;
-    public abstract getPoolCount(): Promise<number>;
+    public abstract getPoolCount(): Promise<number | any>;
     public abstract getPoolReserves(path: (string | any)[]): Promise<any>;
-    public abstract getPoolAddressByIndex(index: number): Promise<string>;
+    public abstract getPoolAddressByIndex(index: number): Promise<string | any>;
     public abstract getTokenPrice(path: (string | any)[]): Promise<any>;
     public abstract getEncodedSwap(
         amountsIn: bigint,

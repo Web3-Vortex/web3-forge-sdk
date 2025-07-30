@@ -8,7 +8,7 @@ import { UNISWAP_V3_FACTORY_ADDRESS_BASE, UNISWAP_V3_ROUTER_ADDRESS_BASE, UNISWA
 import { BASE_NETWORK } from "./constants/network";
 import { DexBaseKindUniswapV3 } from "../../src/dex/UniswapV3Kind";
 
-describe.only("Uniswap V3 Kind", function () {
+describe("Uniswap V3 Kind", function () {
     let owner: HardhatEthersSigner;
     let dex: DexBaseKindUniswapV3;
 

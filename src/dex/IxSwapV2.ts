@@ -1,4 +1,4 @@
-import { Contract, MaxUint256, parseUnits, formatUnits } from "ethers";
+import { Contract, parseUnits, formatUnits } from "ethers";
 import { INetworkConfig } from "../types/network";
 import { ixswapV2Addresses } from "./addresses/uniswap-v2-kind/ixswap-v2";
 import { DexBaseKindUniswapV2 } from "./UniswapV2Kind";

@@ -9,6 +9,7 @@ export enum DexType {
     UniswapV2 = "UniswapV2",
     UniswapV3 = "UniswapV3",
     UniswapV4 = "UniswapV4",
+    AerodromeV2 = "AerodromeV2",
     IXSwap = "IXSwap",
 }
 

@@ -2,31 +2,159 @@ import { Contract, parseUnits, formatUnits } from "ethers";
 import { INetworkConfig } from "../types/network";
 import { DexBaseKindUniswapV2 } from "./UniswapV2Kind";
 import { erc20Abi } from "../erc20/abi/erc20-abi";
-import { aerodromeV2RouterAbi, aerodromeV2FactoryAbi } from "./abi/aerodrome";
+import { aerodromeV2RouterAbi, aerodromeV2FactoryAbi, aerodromeV2CLFactoryAbi } from "./abi/aerodrome";
 import { aerodromeV2Addresses } from "./addresses/uniswap-v2-kind/aerodrome-v2";
+import { DexBase } from "./DexBase";
+import { DexType } from "./types/IDexParams";
+import { ERC20 } from "../erc20/contracts/ERC20";
 
 
-export class AerodromeV2 extends DexBaseKindUniswapV2 {
+/**
+ * Path-формат Solidly/Aerodrome style:
+ *   [token0, token1, fee0, isStable0, factory0,
+ *    token1, token2, fee1, isStable1, factory1,
+ *    ...]
+ *
+ * На выходе – массив объектов
+ *   { from, to, stable, factory }
+ */
+type RouteSeg = { from: string; to: string; stable: boolean; factory: string };
+
+
+export class AerodromeV2 extends DexBase {
+    private _clfactoryContract: Contract;
+
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
         name?: string,
     }) {
         const addresses = aerodromeV2Addresses.get(network.id)!;
-        super(
-            overrides?.routerAddress ?? addresses.router,
-            overrides?.factoryAddress ?? addresses.factory,
+        super({
             network,
-            overrides?.name ?? 'Aerodrome V2',
-            aerodromeV2RouterAbi,
-            aerodromeV2FactoryAbi,
-        );
+            type: DexType.AerodromeV2,
+            name: name ?? 'Aerodrome V2',
+            router: {
+                address: overrides?.routerAddress ?? addresses.router,
+                abi: aerodromeV2RouterAbi,
+            },
+            factory: {
+                address: overrides?.factoryAddress ?? addresses.factory,
+                abi: aerodromeV2FactoryAbi,
+            },
+        });
+
+        this._clfactoryContract = new Contract(addresses.clfactory, aerodromeV2CLFactoryAbi, this._provider);
     }
 
     // в параметр path вставляем два токена для находа пары
     // цена будет возвращаться по первому токену из пары вставленному в path
-    public async getTokenPrice(path: string[]): Promise<number> {
-        // TODO: Implement 
+    public async getTokenPrice(path: (string | boolean)[]): Promise<number> {
+        const token = new Contract(path[0] as string, erc20Abi, this._provider);
+        const tokenQuote = new Contract(path[1] as string, erc20Abi, this._provider);
+
+        const parsedPath = this._parsePath(path);
+
+        const [decimals, decimalsQuote]: [bigint, bigint] = await Promise.all([
+            token.decimals(),
+            tokenQuote.decimals()
+        ]);
+        const amountsOut: bigint = (await this._routerContract.getAmountsOut(parseUnits('1', decimals), parsedPath))[0];
+
+        return +formatUnits(amountsOut, decimalsQuote);
+    }
+
+    public async getFactoryAddress(): Promise<string> {
+        return await this._routerContract.defaultFactory();
+    }
+
+    public async getPoolCount(): Promise<{
+        clFactoryPoolCount: number,
+        factoryPoolCount: number,
+    }> {
+        const [clCount, factoryCount] = await Promise.all([
+            this._clfactoryContract.allPoolsLength(),
+            this._factoryContract.allPairsLength(),
+        ]);
+        return {
+            clFactoryPoolCount: Number(clCount),
+            factoryPoolCount: Number(factoryCount),
+        };
+    }
+
+    public async getPoolAddressByIndex(index: number): Promise<{
+        clFactoryPool: string,
+        clPool: string,
+    }> {
+        const [clFactoryPool, clPool] = await Promise.all([
+            this._clfactoryContract.allPools(index),
+            this._factoryContract.allPairs(index),
+        ]);
+        return {
+            clFactoryPool,
+            clPool,
+        };
+    }
+
+    public async getPoolAddress(path: (string | boolean | number | bigint)[]): Promise<string> {
+        const isFeePool = typeof path[1] === 'boolean';
+
+        if (isFeePool) {
+            return await this._clfactoryContract.poolFor(
+                path[0],
+                path[path.length - 1],
+                path[1] as (number | bigint),
+                this._clfactoryContract.target as string,
+            );
+        }
+
+        return await this._factoryContract.poolFor(
+            path[0],
+            path[path.length - 1],
+            path[1] as boolean,
+            this._factoryContract.target as string,
+        );
+    }
+
+    public async getPoolReserves(path: (string | boolean | number | bigint)[]): Promise<{
+        reserve0: number,
+        reserve1: number,
+        blockTimestampLast: number,
+    }> {
+        const isFeePool = typeof path[1] === 'boolean';
+        const token0 = new ERC20(path[0] as string, this._provider);
+        const token1 = new ERC20(path[path.length - 1] as string, this._provider);
+        const pair = await this.getPoolAddress(path);
+
+        if (isFeePool) {
+            const pairContract = new Contract(pair, aerodromeV2FactoryAbi, this._provider);
+            const [reserve0, reserve1, blockTimestampLast] = await pairContract.getReserves();
+            const [decimals0, decimals1] = await Promise.all([
+                token0.getDecimals(),
+                token1.getDecimals(),
+                pairContract.getReserves()
+            ]);
+
+            return {
+                reserve0: Number(reserve0) / 10**Number(decimals0),
+                reserve1: Number(reserve1) / 10**Number(decimals1),
+                blockTimestampLast: Number(blockTimestampLast),
+            };
+        }
+
+        const pairContract = new Contract(pair, aerodromeV2CLFactoryAbi, this._provider);
+            const [reserve0, reserve1, blockTimestampLast] = await pairContract.getReserves();
+            const [decimals0, decimals1] = await Promise.all([
+                token0.getDecimals(),
+                token1.getDecimals(),
+                pairContract.getReserves()
+            ]);
+
+        return {
+            reserve0: Number(reserve0) / 10**Number(decimals0),
+            reserve1: Number(reserve1) / 10**Number(decimals1),
+            blockTimestampLast: Number(blockTimestampLast),
+        };
     }
 
     public async simulateSwap<T>(
@@ -44,9 +172,9 @@ export class AerodromeV2 extends DexBaseKindUniswapV2 {
     }
 
 
-    public getEncodedSwap<T>(
+    public getEncodedSwap(
         amountsIn: bigint,
-        path: T[],
+        path: (string | boolean)[],
         sendTo: string,
         slippage?: number,
     ): {
@@ -54,7 +182,69 @@ export class AerodromeV2 extends DexBaseKindUniswapV2 {
         topHalf: string,
         bottomHalf: string,
     } {
-        // TODO: Implement
+        const deadline = Math.floor(Date.now() / 1000) + 10000;
+        const amountOutMin = slippage ? amountsIn * BigInt(10000 - slippage) / BigInt(10000) : 0;
+
+        const data = this._routerContract.interface.encodeFunctionData(
+            'swapExactTokensForTokens',
+            [
+                amountsIn,
+                amountOutMin,
+                this._parsePath(path),
+                sendTo,
+                deadline,
+            ]
+        );
+
+        return {
+            data,
+            topHalf: data.slice(0, 10),
+            bottomHalf: '0x' + data.slice(74),
+        }
+    }
+
+
+    public getReversedPath(path: (string | boolean)[]): (string | boolean)[] {
+        return path.reverse();
+    }
+
+    public splitPath(path: (string | number | bigint)[]): (string | number | bigint | boolean)[][] {
+        if (path.length === 1) {
+            return [];
+        }
+        if (path.length === 3) {
+            return [path];
+        }
+
+        const pools: (string | bigint | number)[][] = [];
+
+        for (let i = 0; i < path.length - 2; i += 2) {
+            pools.push(path.slice(i, i + 3));
+        }
+
+        return pools;
+    }
+
+
+    // HELPERS
+    private _parsePath(path: (string | boolean)[]): RouteSeg[] {
+        if (path.length < 3 || (path.length - 1) % 2 !== 0) {
+            throw new Error("Invalid path: must be token,token,stable,factory repeating");
+        }
+
+        const routes: RouteSeg[] = [];
+
+        // первый токен - это path[0]; дальше группы длиной 4 с перекрытием
+        for (let i = 0; i < path.length - 2; i += 2) {
+            routes.push({
+                from: path[i] as string,
+                to: path[i + 1] as string,
+                stable: Boolean(path[i + 2]),
+                factory: this._factoryContract.target as string,
+            });
+        }
+
+        return routes;
     }
 }
 
