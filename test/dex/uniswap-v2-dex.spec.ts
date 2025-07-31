@@ -25,7 +25,7 @@ import { BASE_NETWORK } from "./constants/network";
 import { ERC20 } from "../../src/erc20/contracts/ERC20";
 import { IxSwapV2 } from "../../src/dex/IxSwapV2";
 
-describe.only("Uniswap V2 Dexes for Network: Base", function () {
+describe("Uniswap V2 Dexes for Network: Base", function () {
     let owner: HardhatEthersSigner;
 
     // Dexes

@@ -1,7 +1,7 @@
-import { Contract, parseUnits, formatUnits } from "ethers";
+import { Contract, parseUnits, formatUnits, ZeroAddress } from "ethers";
 import { INetworkConfig } from "../types/network";
 import { erc20Abi } from "../erc20/abi/erc20-abi";
-import { aerodromeV2RouterAbi, aerodromeV2FactoryAbi, aerodromeV2CLFactoryAbi } from "./abi/aerodrome";
+import { aerodromeV2RouterAbi, aerodromeV2FactoryAbi, aerodromeV2CLFactoryAbi, aerodromeV2PoolAbi, aerodromeV2CLPoolAbi } from "./abi/aerodrome";
 import { aerodromeV2Addresses } from "./addresses/uniswap-v2-kind/aerodrome-v2";
 import { DexBase } from "./DexBase";
 import { DexType } from "./types/IDexParams";
@@ -32,7 +32,7 @@ export class AerodromeV2 extends DexBase {
         super({
             network,
             type: DexType.AerodromeV2,
-            name: name ?? 'Aerodrome V2',
+            name: overrides?.name ?? 'Aerodrome V2',
             router: {
                 address: overrides?.routerAddress ?? addresses.router,
                 abi: aerodromeV2RouterAbi,
@@ -50,7 +50,7 @@ export class AerodromeV2 extends DexBase {
     // цена будет возвращаться по первому токену из пары вставленному в path
     public async getTokenPrice(path: (string | boolean)[]): Promise<number> {
         const token = new Contract(path[0] as string, erc20Abi, this._provider);
-        const tokenQuote = new Contract(path[1] as string, erc20Abi, this._provider);
+        const tokenQuote = new Contract(path[path.length - 1] as string, erc20Abi, this._provider);
 
         const parsedPath = this._parsePath(path);
 
@@ -73,11 +73,12 @@ export class AerodromeV2 extends DexBase {
     }> {
         const [clCount, factoryCount] = await Promise.all([
             this._clfactoryContract.allPoolsLength(),
-            this._factoryContract.allPairsLength(),
+            this._factoryContract.allPoolsLength(),
         ]);
+
         return {
-            clFactoryPoolCount: Number(clCount),
-            factoryPoolCount: Number(factoryCount),
+            clFactoryPoolCount: clCount,
+            factoryPoolCount: factoryCount,
         };
     }
 
@@ -85,10 +86,42 @@ export class AerodromeV2 extends DexBase {
         clFactoryPool: string,
         clPool: string,
     }> {
+        const {
+            clFactoryPoolCount,
+            factoryPoolCount,
+        } = await this.getPoolCount();
+
+        const clFactoryPoolCountMinusOne = Number(clFactoryPoolCount) - 1;
+        const factoryPoolCountMinusOne = Number(factoryPoolCount) - 1;
+
+        if(index > clFactoryPoolCountMinusOne && index > factoryPoolCountMinusOne) {
+            return {
+                clFactoryPool: ZeroAddress,
+                clPool: ZeroAddress,
+            };
+        }
+
+        if (index >= clFactoryPoolCountMinusOne && index <= factoryPoolCountMinusOne) {
+            const clFactoryPool = await this._factoryContract.allPools(index);
+
+            return {
+                clFactoryPool: ZeroAddress,
+                clPool: clFactoryPool,
+            };
+        } else if (index >= factoryPoolCountMinusOne && index <= clFactoryPoolCountMinusOne) {
+            const clFactoryPool = await this._factoryContract.allPools(index);
+
+            return {
+                clFactoryPool: clFactoryPool,
+                clPool: ZeroAddress,
+            };
+        }
+
         const [clFactoryPool, clPool] = await Promise.all([
             this._clfactoryContract.allPools(index),
-            this._factoryContract.allPairs(index),
+            this._factoryContract.allPools(index),
         ]);
+
         return {
             clFactoryPool,
             clPool,
@@ -96,42 +129,49 @@ export class AerodromeV2 extends DexBase {
     }
 
     public async getPoolAddress(path: (string | boolean | number | bigint)[]): Promise<string> {
-        const isFeePool = typeof path[1] === 'boolean';
+        const isFeePool = typeof path[1] !== 'boolean';
 
         if (isFeePool) {
-            return await this._clfactoryContract.poolFor(
+            return await this._clfactoryContract.getPool(
                 path[0],
                 path[path.length - 1],
                 path[1] as (number | bigint),
-                this._clfactoryContract.target as string,
             );
         }
 
-        return await this._factoryContract.poolFor(
+        return await this._factoryContract["getPool(address,address,bool)"](
             path[0],
             path[path.length - 1],
             path[1] as boolean,
-            this._factoryContract.target as string,
         );
     }
 
     public async getPoolReserves(path: (string | boolean | number | bigint)[]): Promise<{
         reserve0: number,
         reserve1: number,
-        blockTimestampLast: number,
+        blockTimestampLast?: number,
+        sqrtPriceX96?: string,
+        liquidity?: string,
     }> {
-        const isFeePool = typeof path[1] === 'boolean';
+        const isFeePool = typeof path[1] !== 'boolean';
         const token0 = new ERC20(path[0] as string, this._provider);
         const token1 = new ERC20(path[path.length - 1] as string, this._provider);
         const pair = await this.getPoolAddress(path);
 
-        if (isFeePool) {
-            const pairContract = new Contract(pair, aerodromeV2FactoryAbi, this._provider);
+        if(pair === ZeroAddress) {
+            return {
+                reserve0: 0,
+                reserve1: 0,
+                blockTimestampLast: 0,
+            };
+        }
+
+        if (!isFeePool) {
+            const pairContract = new Contract(pair, aerodromeV2PoolAbi, this._provider);
             const [reserve0, reserve1, blockTimestampLast] = await pairContract.getReserves();
             const [decimals0, decimals1] = await Promise.all([
                 token0.getDecimals(),
                 token1.getDecimals(),
-                pairContract.getReserves()
             ]);
 
             return {
@@ -141,33 +181,61 @@ export class AerodromeV2 extends DexBase {
             };
         }
 
-        const pairContract = new Contract(pair, aerodromeV2CLFactoryAbi, this._provider);
-            const [reserve0, reserve1, blockTimestampLast] = await pairContract.getReserves();
-            const [decimals0, decimals1] = await Promise.all([
-                token0.getDecimals(),
-                token1.getDecimals(),
-                pairContract.getReserves()
-            ]);
+        const poolContract = new Contract(pair, aerodromeV2CLPoolAbi, this._provider);
+        const [sqrtPriceX96Struct, liquidity] = await Promise.all([
+            poolContract.slot0(),
+            poolContract.liquidity(),
+        ]);
+
+        const sqrtPriceX96 = sqrtPriceX96Struct.sqrtPriceX96 ?? sqrtPriceX96Struct[0]; // совместимость
+
+        const [dec0, dec1] = await Promise.all([
+            token0.getDecimals(),
+            token1.getDecimals(),
+        ]);
+
+        // вычисляем виртуальные резервы
+        const Q96 = BigInt(2) ** BigInt(96);
+        const sqrtX = BigInt(sqrtPriceX96);
+        const L = BigInt(liquidity.toString());
+
+        const reserve0 = Number(L * Q96 / sqrtX) / 10 ** Number(dec0);
+        const reserve1 = Number(L * sqrtX / Q96) / 10 ** Number(dec1);
 
         return {
-            reserve0: Number(reserve0) / 10**Number(decimals0),
-            reserve1: Number(reserve1) / 10**Number(decimals1),
-            blockTimestampLast: Number(blockTimestampLast),
+            reserve0,
+            reserve1,
+            sqrtPriceX96: sqrtX.toString(),
+            liquidity: L.toString(),
         };
     }
 
     public async simulateSwap<T>(
         from: string,
         amountsIn: bigint,
-        path: T[],
-        sendTo: string,
+        path: (string | boolean)[],
+        sendTo?: string,
         overrides?: {
             gasLimit?: number,
             maxFeePerGas?: number,
             maxPriorityFeePerGas?: number,
         }
     ) {
-        // TODO: Implement
+        const deadline = Math.floor(Date.now() / 1000) + 10000;
+
+        const data = await this._routerContract.swapExactTokensForTokens.staticCallResult(
+            amountsIn,
+            0,
+            this._parsePath(path),
+            sendTo ?? from,
+            deadline,
+            {
+                ...overrides,
+                from,
+            }
+        );
+
+        return data;
     }
 
 
@@ -207,7 +275,7 @@ export class AerodromeV2 extends DexBase {
         return path.reverse();
     }
 
-    public splitPath(path: (string | number | bigint)[]): (string | number | bigint | boolean)[][] {
+    public splitPath(path: (string | boolean | number | bigint)[]): (string | number | bigint | boolean)[][] {
         if (path.length === 1) {
             return [];
         }
@@ -215,7 +283,7 @@ export class AerodromeV2 extends DexBase {
             return [path];
         }
 
-        const pools: (string | bigint | number)[][] = [];
+        const pools: (string | bigint | number | boolean)[][] = [];
 
         for (let i = 0; i < path.length - 2; i += 2) {
             pools.push(path.slice(i, i + 3));
@@ -237,8 +305,8 @@ export class AerodromeV2 extends DexBase {
         for (let i = 0; i < path.length - 2; i += 2) {
             routes.push({
                 from: path[i] as string,
-                to: path[i + 1] as string,
-                stable: Boolean(path[i + 2]),
+                to: path[i + 2] as string,
+                stable: Boolean(path[i + 1]),
                 factory: this._factoryContract.target as string,
             });
         }
