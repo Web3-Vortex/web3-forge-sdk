@@ -4,7 +4,7 @@ import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signer
 import { ERC20 } from "../../src/erc20/contracts/ERC20";
 import { JsonRpcProvider, parseUnits } from "ethers";
 import { erc20Abi } from "../../src/erc20/abi/erc20-abi";
-import { callTransaction } from "../../src/erc20/utils/call-transaction";
+import { callTransaction } from "../../src/utils/call-transaction";
 
 describe("ERC20", function () {
     let owner: HardhatEthersSigner;

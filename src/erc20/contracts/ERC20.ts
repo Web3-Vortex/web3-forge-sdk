@@ -1,6 +1,6 @@
 import { Contract, Wallet, JsonRpcSigner, type ContractRunner, TransactionResponse } from "ethers";
 import { erc20Abi } from "../abi/erc20-abi";
-import { isObjectAddressable } from "../utils/is-object-addressable";
+import { isObjectAddressable } from "../../utils/is-object-addressable";
 import { IAddressable } from "../../types/IAddressable";
 
 export class ERC20 {

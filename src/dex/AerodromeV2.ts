@@ -6,6 +6,7 @@ import { aerodromeV2Addresses } from "./addresses/uniswap-v2-kind/aerodrome-v2";
 import { DexBase } from "./DexBase";
 import { DexType } from "./types/IDexParams";
 import { ERC20 } from "../erc20/contracts/ERC20";
+import { reverseCopy } from "../utils/reverse-copy";
 
 
 /**
@@ -272,7 +273,7 @@ export class AerodromeV2 extends DexBase {
 
 
     public getReversedPath(path: (string | boolean)[]): (string | boolean)[] {
-        return path.reverse();
+        return reverseCopy(path);
     }
 
     public splitPath(path: (string | boolean | number | bigint)[]): (string | number | bigint | boolean)[][] {

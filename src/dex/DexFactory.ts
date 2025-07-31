@@ -34,7 +34,7 @@ import {
 } from "../../src/dex/UniswapV3Kind";
 import { IxSwapV2 } from "./IxSwapV2";
 import { AerodromeV2 } from "./AerodromeV2";
-import { DexInterfaceName, DexType } from "./types/IDexParams";
+import { DexInterfaceName } from "./types/IDexParams";
 import { INetworkConfig } from "../types/network";
 
 export type TCreateDex = (network: INetworkConfig) => DexBase;
