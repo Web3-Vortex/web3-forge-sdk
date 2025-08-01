@@ -35,7 +35,8 @@ import {
 import { IxSwapV2 } from "./IxSwapV2";
 import { AerodromeV2 } from "./AerodromeV2";
 import { DexInterfaceName } from "./types/IDexParams";
-import { INetworkConfig } from "../types/network";
+import { INetworkConfig, Network } from "../types/network";
+import { getEnumValuesArray } from "../utils/get-enum-values-array";
 
 export type TCreateDex = (network: INetworkConfig) => DexBase;
 
@@ -88,5 +89,23 @@ export class DexFactory {
         }
 
         return this._dexes[dexInterfaceName](network);
+    }
+
+    public static getDexTypeByInterfaceName(
+        dexInterfaceName: DexInterfaceName
+    ) {
+        const networks = getEnumValuesArray(Network);
+
+        for (const network of networks) {
+            try {
+                return this.create({
+                    id: network,
+                    rpcUrl: "",
+                    wssUrl: "",
+                }, dexInterfaceName).dexParams.type;
+            } catch (error) {}
+        }
+
+        throw new Error(`Dex type ${dexInterfaceName} not found`);
     }
 }
