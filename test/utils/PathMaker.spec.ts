@@ -191,18 +191,10 @@ describe.only("PathMaker", function () {
                 DexInterfaceName.IXSwap,
             ],
             isWethIncluded: true,
+            isLiquidityRequired: true,
         });
 
-
-        console.log(paths.length);
-
-        // const dex = DexFactory.create({
-        //     id: Network.Base,
-        //     rpcUrl: "http://localhost:8545",
-        //     wssUrl: "http://localhost:8545",
-        // }, DexInterfaceName.UniswapV3);
-        // console.log(await PathMaker.isPoolExists(dex, [USDC_ADDRESS_BASE, 500, '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf']));
-
+        console.log(paths[0]);
     });
 
 

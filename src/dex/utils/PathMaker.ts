@@ -14,6 +14,7 @@ export interface IPathMakerParams {
     network: INetworkConfig;
     dexIncluded: DexInterfaceName[];
     isWethIncluded?: boolean;
+    isLiquidityRequired?: boolean;
 }
 
 export class PathMaker {
@@ -144,6 +145,7 @@ export class PathMaker {
             network,
             dexIncluded,
             isWethIncluded,
+            isLiquidityRequired,
         }: IPathMakerParams,
         settings?: {
             chunkSize: number;
@@ -169,16 +171,7 @@ export class PathMaker {
         });
 
         // Get unique paths from created by dexes
-        const uniquePaths = new Set<string>();
-
-        for (const path of paths) {
-            const dexInterfaceOut = dexes.get(path.dexIn.interfaceName);
-            if (dexInterfaceOut) {
-                const reversedPath = dexInterfaceOut.getReversedPath(path.pathOut);
-                uniquePaths.add(path.dexOut.interfaceName + '-' + reversedPath.join('-').toLowerCase());
-            }
-            uniquePaths.add(path.dexIn.interfaceName + '-' + path.pathIn.join('-').toLowerCase());
-        }
+        const uniquePaths = this._getUniquePaths(dexes, paths);
 
         const poolPairPaths = [];
 
@@ -210,11 +203,11 @@ export class PathMaker {
         for (const invalid of poolPairsNonExists) {
             const dexInterface = dexes.get(invalid.dexInterface);
             const key = invalid.dexInterface + '-' + invalid.path.join('-').toLowerCase();
-            if(dexInterface) {
+            if (dexInterface) {
                 const keyReversed = invalid.dexInterface + '-' + dexInterface.getReversedPath(invalid.path).join('-').toLowerCase();
                 invalidPathSet.add(keyReversed);
             }
-            
+
             invalidPathSet.add(key);
         }
 
@@ -225,6 +218,42 @@ export class PathMaker {
 
             return !invalidPathSet.has(pathKeyIn) && !invalidPathSet.has(pathKeyOut);
         });
+
+
+        if (isLiquidityRequired) {
+            // 3. Добавляем ликвидности в пути
+            const liquidity = (await chunk.processInChunksAsync(
+                this._getLiquidityTasks(dexes, filteredPaths),
+                _settings.chunkSize,
+                async (item) => item(),
+                _settings.chunkTimeout,
+            )).filter(p => p !== undefined);
+
+            const liquidityMap = new Map<string, { liquidity: any }>();
+
+            for (const item of liquidity) {
+                if (!item) continue;
+
+                const key = item.dexInterface + '-' + item.path.join('-').toLowerCase();
+                liquidityMap.set(key, item);
+            }
+
+            const filteredPathsWithLiquidity = filteredPaths.map(path => {
+                const keyIn = path.dexIn.interfaceName + '-' + path.pathIn.join('-').toLowerCase();
+                const keyOut = path.dexOut.interfaceName + '-' + dexes.get(path.dexOut.interfaceName)?.getReversedPath(path.pathOut).join('-').toLowerCase();
+
+                return {
+                    ...path,
+                    liquidity: {
+                        in: liquidityMap.get(keyIn)?.liquidity,
+                        out: liquidityMap.get(keyOut)?.liquidity,
+                    },
+                };
+            });
+
+
+            return filteredPathsWithLiquidity;
+        }
 
         return filteredPaths;
     }
@@ -328,6 +357,46 @@ export class PathMaker {
         return poolPairTasks;
     }
 
+    private static _getLiquidityTasks(
+        dexMap: Map<DexInterfaceName, DexBase>,
+        pairPaths: {
+            dexIn: {
+                type: DexType | undefined;
+                interfaceName: DexInterfaceName;
+            };
+            dexOut: {
+                type: DexType | undefined;
+                interfaceName: DexInterfaceName;
+            };
+            pathIn: any[];
+            pathOut: any[];
+        }[]
+    ) {
+        const uniquePaths = this._getUniquePaths(dexMap, pairPaths);
+        const splittedPaths = this._getSplittedPaths(dexMap, uniquePaths);
+        const liquidityTasks: (() => Promise<any | undefined>)[] = [];
+
+        for (const splittedPath of splittedPaths) {
+            const dexInterface = dexMap.get(splittedPath.dexInterface);
+            if (!dexInterface) {
+                continue;
+            }
+
+            liquidityTasks.push(async () => {
+                const liquidity = await Promise.all(
+                    splittedPath.pathSplitted.map(p => dexInterface.getPoolReserves(p))
+                );
+                return {
+                    dexInterface: splittedPath.dexInterface,
+                    path: splittedPath.path,
+                    liquidity,
+                };
+            });
+        }
+
+        return liquidityTasks;
+    }
+
 
 
     private static _parseValue(value: string): string | number | boolean | bigint {
@@ -342,5 +411,63 @@ export class PathMaker {
         const num = Number(value);
         if (!isNaN(num) && value.trim() !== "") return num;
         return value;
+    }
+
+    private static _getSplittedPaths(dexMap: Map<DexInterfaceName, DexBase>, uniquePaths: Set<string>): {
+        dexInterface: DexInterfaceName;
+        path: any[];
+        pathSplitted: any[][];
+    }[] {
+        const splittedPaths = [];
+
+        for (const path of uniquePaths) {
+            const dexInterface = path.split('-')[0];
+            const pathParts = path.split('-').slice(1);
+            const pathConcatinated = pathParts.map(part => this._parseValue(part));
+
+            const dex = dexMap.get(dexInterface as DexInterfaceName);
+            if (!dex) {
+                continue;
+            }
+
+            const pathSplitted = dex.splitPath(pathConcatinated);
+
+            splittedPaths.push({
+                dexInterface: dexInterface as DexInterfaceName,
+                path: pathConcatinated,
+                pathSplitted: pathSplitted,
+            });
+        }
+
+        return splittedPaths;
+    }
+
+    private static _getUniquePaths(
+        dexMap: Map<DexInterfaceName, DexBase>,
+        pairPaths: {
+            dexIn: {
+                type: DexType | undefined;
+                interfaceName: DexInterfaceName;
+            };
+            dexOut: {
+                type: DexType | undefined;
+                interfaceName: DexInterfaceName;
+            };
+            pathIn: any[];
+            pathOut: any[];
+        }[]
+    ) {
+        const uniquePaths = new Set<string>();
+
+        for (const path of pairPaths) {
+            const dexInterfaceOut = dexMap.get(path.dexIn.interfaceName);
+            if (dexInterfaceOut) {
+                const reversedPath = dexInterfaceOut.getReversedPath(path.pathOut);
+                uniquePaths.add(path.dexOut.interfaceName + '-' + reversedPath.join('-').toLowerCase());
+            }
+            uniquePaths.add(path.dexIn.interfaceName + '-' + path.pathIn.join('-').toLowerCase());
+        }
+
+        return uniquePaths;
     }
 }
