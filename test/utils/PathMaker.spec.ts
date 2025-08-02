@@ -3,9 +3,8 @@ import { PathMaker } from "../../src/dex/utils/PathMaker";
 import { Network } from "../../src/types/network";
 import { DexInterfaceName } from "../../src/dex/types/IDexParams";
 import { USDC_ADDRESS_BASE } from "../dex/constants/tokens";
-import { DexFactory } from "../../src/dex/DexFactory";
 
-describe.only("PathMaker", function () {
+describe("PathMaker", function () {
     it("Should make paths for Two dexes", function () {
         const paths0 = PathMaker.makePathPair({
             tokenIn: "0x1111111111111111111111111111111111111111",
@@ -145,7 +144,7 @@ describe.only("PathMaker", function () {
     });
 
 
-    it.only("Should create auto path", async function () {
+    it("Should create auto path", async function () {
         const paths = await PathMaker.createAutoPath({
             tokenIn: USDC_ADDRESS_BASE,
             tokenOut: "0xFE550BfFb51EB645EA3b324D772A19AC449E92c5",
