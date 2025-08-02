@@ -86,6 +86,20 @@ describe("Uniswap V2 Dexes for Network: Base", function () {
     });
 
 
+    describe.only("Testing all base functions", function() {
+        it("should correctly split a path of 3 tokens", function() {
+            const path = [WETH_ADDRESS_BASE, USDC_ADDRESS_BASE, '0xde30da39c46104798bb5aa3fe8b9e0e1f348163f'];
+            const expectedSplit = [
+                [WETH_ADDRESS_BASE, USDC_ADDRESS_BASE],
+                [USDC_ADDRESS_BASE, '0xde30da39c46104798bb5aa3fe8b9e0e1f348163f']
+            ];
+            const split = ixsswapv2.splitPath(path);
+            console.log(split);
+            expect(split).to.deep.equal(expectedSplit);
+        });
+    });
+
+
     describe("Get functions for network", function() {
         it("should return the correct pool count for each dex", async function() {
             const count0 = await alienBaseArea51V2.getPoolCount();

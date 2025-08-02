@@ -7,7 +7,7 @@ import { BASE_NETWORK } from "./constants/network";
 import { ERC20 } from "../../src/erc20/contracts/ERC20";
 import { AerodromeV2 } from "../../src/dex/AerodromeV2";
 
-describe.only("Aerodrome V2 Dexes for Network: Base", function () {
+describe("Aerodrome V2 Dexes for Network: Base", function () {
     let owner: HardhatEthersSigner;
 
     // Dexes

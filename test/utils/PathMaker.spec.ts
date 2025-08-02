@@ -2,6 +2,8 @@ import { expect } from "chai";
 import { PathMaker } from "../../src/dex/utils/PathMaker";
 import { Network } from "../../src/types/network";
 import { DexInterfaceName } from "../../src/dex/types/IDexParams";
+import { USDC_ADDRESS_BASE } from "../dex/constants/tokens";
+import { DexFactory } from "../../src/dex/DexFactory";
 
 describe.only("PathMaker", function () {
     it("Should make paths for Two dexes", function () {
@@ -140,6 +142,67 @@ describe.only("PathMaker", function () {
         });
 
         console.log(paths.length);
+    });
+
+
+    it.only("Should create auto path", async function () {
+        const paths = await PathMaker.createAutoPath({
+            tokenIn: USDC_ADDRESS_BASE,
+            tokenOut: "0xFE550BfFb51EB645EA3b324D772A19AC449E92c5",
+            network: {
+                id: Network.Base,
+                rpcUrl: "http://localhost:8545",
+                wssUrl: "http://localhost:8545",
+            },
+            dexIncluded: [
+                DexInterfaceName.AlienBaseV2,
+                DexInterfaceName.AlienBaseArea51V2,
+                DexInterfaceName.BaseSwapV2,
+                DexInterfaceName.DeltaSwapV2,
+                DexInterfaceName.DackieSwapV2,
+                DexInterfaceName.RingSwapV2,
+                DexInterfaceName.RocketSwapV2,
+                DexInterfaceName.RaiFinanceV2,
+                DexInterfaceName.UniswapV2,
+                DexInterfaceName.PancakeSwapV2,
+                DexInterfaceName.SushiSwapV2,
+                DexInterfaceName.SharkSwapV2,
+                DexInterfaceName.SwapBasedAmmV2,
+                DexInterfaceName.LeetSwapV2,
+                DexInterfaceName.IcecreamSwapV2,
+                DexInterfaceName.ElkV2,
+
+                // Uniswap V3 forks
+                DexInterfaceName.UniswapV3,
+                DexInterfaceName.PancakeSwapV3,
+                DexInterfaceName.SushiSwapV3,
+                DexInterfaceName.DerpDexV3,
+                DexInterfaceName.ThroneV3,
+                DexInterfaceName.HorizonDexV3,
+                DexInterfaceName.SwapBasedAmmV3,
+                DexInterfaceName.BaseSwapV3,
+                DexInterfaceName.KinetixV3,
+                DexInterfaceName.DackieSwapV3,
+                DexInterfaceName.WagmiV3,
+                DexInterfaceName.AlienBaseV3,
+
+                // Uniswap Forks with changes
+                DexInterfaceName.AerodromeV2,
+                DexInterfaceName.IXSwap,
+            ],
+            isWethIncluded: true,
+        });
+
+
+        console.log(paths.length);
+
+        // const dex = DexFactory.create({
+        //     id: Network.Base,
+        //     rpcUrl: "http://localhost:8545",
+        //     wssUrl: "http://localhost:8545",
+        // }, DexInterfaceName.UniswapV3);
+        // console.log(await PathMaker.isPoolExists(dex, [USDC_ADDRESS_BASE, 500, '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf']));
+
     });
 
 
