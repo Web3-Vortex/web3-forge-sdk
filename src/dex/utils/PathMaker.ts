@@ -259,6 +259,129 @@ export class PathMaker {
     }
 
 
+    public static async createPaths(
+        params: {
+            paths: {
+                dexIn: DexInterfaceName;
+                dexOut: DexInterfaceName;
+                pathIn: (string | any)[];
+                pathOut: (string | any)[];
+            }[];
+            network: INetworkConfig;
+            isLiquidityRequired?: boolean;
+        },
+        settings?: {
+            chunkSize: number;
+            chunkTimeout?: number;
+        }
+    ) {
+        const _settings = settings ?? {
+            chunkSize: 50,
+            chunkTimeout: 0,
+        };
+        const { network, paths, isLiquidityRequired } = params;
+        const dexes = new Map<DexInterfaceName, DexBase>();
+
+        const parsedPaths = this.removeDuplicates(paths.map(path => ({
+            dexIn: {
+                type: dexes.get(path.dexIn)?.dexParams.type,
+                interfaceName: path.dexIn,
+            },
+            dexOut: {
+                type: dexes.get(path.dexOut)?.dexParams.type,
+                interfaceName: path.dexOut,
+            },
+            pathIn: path.pathIn,
+            pathOut: path.pathOut,
+        })));
+
+        // Get unique paths from created by dexes
+        const uniquePaths = this._getUniquePaths(dexes, parsedPaths);
+        const poolPairPaths = [];
+
+        for (const path of uniquePaths) {
+            const dexInterface = path.split('-')[0];
+            const pathParts = path.split('-').slice(1);
+            const pathSplitted = pathParts.map(part => this._parseValue(part));
+
+            poolPairPaths.push({
+                dexInterface,
+                path: pathSplitted,
+            });
+        }
+
+        // Delete paths that are not exists in dexes
+        const poolPairsNonExists = (await chunk.processInChunksAsync(
+            this._getPoolPairOnlyNonExistsTasks(dexes, poolPairPaths as any),
+            _settings.chunkSize,
+            async (item) => item(),
+            _settings.chunkTimeout,
+        )).filter(p => p !== undefined);
+
+        // Save only valid paths
+        // 1. Собираем невалидные ключи в Set
+        const invalidPathSet = new Set<string>();
+
+
+        for (const invalid of poolPairsNonExists) {
+            const dexInterface = dexes.get(invalid.dexInterface);
+            const key = invalid.dexInterface + '-' + invalid.path.join('-').toLowerCase();
+            if (dexInterface) {
+                const keyReversed = invalid.dexInterface + '-' + dexInterface.getReversedPath(invalid.path).join('-').toLowerCase();
+                invalidPathSet.add(keyReversed);
+            }
+
+            invalidPathSet.add(key);
+        }
+
+        // 2. Фильтруем paths
+        const filteredPaths = parsedPaths.filter(path => {
+            const pathKeyIn = path.dexIn.interfaceName + '-' + path.pathIn.join('-').toLowerCase();
+            const pathKeyOut = path.dexOut.interfaceName + '-' + path.pathOut.join('-').toLowerCase();
+
+            return !invalidPathSet.has(pathKeyIn) && !invalidPathSet.has(pathKeyOut);
+        });
+
+
+        if (isLiquidityRequired) {
+            // 3. Добавляем ликвидности в пути
+            const liquidity = (await chunk.processInChunksAsync(
+                this._getLiquidityTasks(dexes, filteredPaths),
+                _settings.chunkSize,
+                async (item) => item(),
+                _settings.chunkTimeout,
+            )).filter(p => p !== undefined);
+
+            const liquidityMap = new Map<string, { liquidity: any }>();
+
+            for (const item of liquidity) {
+                if (!item) continue;
+
+                const key = item.dexInterface + '-' + item.path.join('-').toLowerCase();
+                liquidityMap.set(key, item);
+            }
+
+            const filteredPathsWithLiquidity = filteredPaths.map(path => {
+                const keyIn = path.dexIn.interfaceName + '-' + path.pathIn.join('-').toLowerCase();
+                const keyOut = path.dexOut.interfaceName + '-' + dexes.get(path.dexOut.interfaceName)?.getReversedPath(path.pathOut).join('-').toLowerCase();
+
+                return {
+                    ...path,
+                    liquidity: {
+                        in: liquidityMap.get(keyIn)?.liquidity,
+                        out: liquidityMap.get(keyOut)?.liquidity,
+                    },
+                };
+            });
+
+
+            return filteredPathsWithLiquidity;
+        }
+
+        return filteredPaths;
+    }
+
+
     public static async isPoolExists(dex: DexBase, path: (string | any)[]): Promise<boolean> {
         try {
             const pool = await dex.getPoolAddress(path);
@@ -269,6 +392,38 @@ export class PathMaker {
         } catch (error) {
             return false;
         }
+    }
+
+
+    public static removeDuplicates(paths: {
+        dexIn: {
+            type: DexType | undefined;
+            interfaceName: DexInterfaceName;
+        };
+        dexOut: {
+            type: DexType | undefined;
+            interfaceName: DexInterfaceName;
+        };
+        pathIn: any[];
+        pathOut: any[];
+    }[]) {
+        const uniquePaths = new Set<string>();
+        const result = [];
+
+        for (const path of paths) {
+            const keyIn = path.dexIn.interfaceName + '-' + path.pathIn.join('-').toLowerCase();
+            const keyOut = path.dexOut.interfaceName + '-' + path.pathOut.join('-').toLowerCase();
+            const key = keyIn + '-' + keyOut;
+
+            if (uniquePaths.has(key)) {
+                continue;
+            }
+
+            uniquePaths.add(key);
+            result.push(path);
+        }
+
+        return result;
     }
 
 

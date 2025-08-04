@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { PathMaker } from "../../src/dex/utils/PathMaker";
 import { Network } from "../../src/types/network";
-import { DexInterfaceName } from "../../src/dex/types/IDexParams";
+import { DexInterfaceName, DexType } from "../../src/dex/types/IDexParams";
 import { USDC_ADDRESS_BASE } from "../dex/constants/tokens";
 
 describe("PathMaker", function () {
@@ -194,6 +194,71 @@ describe("PathMaker", function () {
         });
 
         console.log(paths[0]);
+    });
+
+    it.only("should remove duplicates", function () {
+        const path0 = {
+            dexIn: {
+                type: DexType.UniswapV2,
+                interfaceName: DexInterfaceName.UniswapV2,
+            },
+            dexOut: {
+                type: DexType.UniswapV2,
+                interfaceName: DexInterfaceName.UniswapV3,
+            },
+            pathIn: ["0x1111111111111111111111111111111111111111", "0x2222222222222222222222222222222222222222"],
+            pathOut: ["0x1111111111111111111111111111111111111111", "0x2222222222222222222222222222222222222222"],
+        };
+        const path1 = {
+            dexIn: {
+                type: DexType.UniswapV2,
+                interfaceName: DexInterfaceName.UniswapV2,
+            },
+            dexOut: {
+                type: DexType.UniswapV2,
+                interfaceName: DexInterfaceName.UniswapV3,
+            },
+            pathIn: ["0x1111111111111211111111111111111111111111", "0x2222222222222222222222222222222222222222"],
+            pathOut: ["0x1111111111111111111111111111111111111111", "0x2222222222222222222222222222222222222222"],
+        };
+        const path2 = {
+            dexIn: {
+                type: DexType.UniswapV2,
+                interfaceName: DexInterfaceName.UniswapV2,
+            },
+            dexOut: {
+                type: DexType.UniswapV2,
+                interfaceName: DexInterfaceName.UniswapV3,
+            },
+            pathIn: ["0x1111111111111111111111111111111111111111", "0x2222222222222222222222222222222222222222"],
+            pathOut: ["0x1111111111111111311111111111111111111111", "0x2222222222222222222222222222222222222222"],
+        };
+        const path3 = {
+            dexIn: {
+                type: DexType.UniswapV2,
+                interfaceName: DexInterfaceName.UniswapV2,
+            },
+            dexOut: {
+                type: DexType.UniswapV2,
+                interfaceName: DexInterfaceName.IXSwap,
+            },
+            pathIn: ["0x1111111111111111111111111111111111111111", "0x2222222222222222222222222222222222222222"],
+            pathOut: ["0x1111111111111111111111111111111111111111", "0x2222222222222222222222222222222222222222"],
+        };
+
+        const paths = PathMaker.removeDuplicates([
+            path0,
+            path0,
+            path3,
+            path1,
+            path2,
+            path2,
+            path2,
+        ]);
+
+        console.log(paths);
+
+        expect(paths.length).to.equal(4);
     });
 
 
