@@ -1,4 +1,4 @@
-import { Contract, formatUnits, parseUnits, solidityPacked, ZeroAddress } from "ethers";
+import { Contract, formatUnits, MaxUint256, parseUnits, solidityPacked, ZeroAddress } from "ethers";
 
 import { INetworkConfig } from "../types/network";
 import { DexBase } from "./DexBase";
@@ -192,7 +192,7 @@ export class DexBaseKindUniswapV3 extends DexBase {
                 {
                     path: this._encodePath(path),
                     recipient: sendTo,
-                    deadline,
+                    deadline: MaxUint256,
                     amountIn: amountsIn,
                     amountOutMinimum: amountOutMin,
                 },

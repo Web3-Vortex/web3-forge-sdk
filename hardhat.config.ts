@@ -22,7 +22,7 @@ const config: HardhatUserConfig = {
       chainId: 8453,
       forking: {
         url: BASE_URL,
-        blockNumber: process.env.FORK_BLOCK_NUMBER ? parseInt(process.env.FORK_BLOCK_NUMBER) : 33200202,
+        blockNumber: process.env.FORK_BLOCK_NUMBER ? parseInt(process.env.FORK_BLOCK_NUMBER) : 34386449,
       },
       chains: {
         8453: {

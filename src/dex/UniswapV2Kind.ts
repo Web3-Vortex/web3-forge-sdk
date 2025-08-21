@@ -1,4 +1,4 @@
-import { Contract, parseUnits } from "ethers";
+import { Contract, MaxUint256, parseUnits } from "ethers";
 
 import { INetworkConfig, Network } from "../types/network";
 import { DexBase } from "./DexBase";
@@ -138,7 +138,7 @@ export class DexBaseKindUniswapV2 extends DexBase {
                 amountOutMin,
                 path,
                 sendTo,
-                deadline
+                MaxUint256
             ]
         );
 
