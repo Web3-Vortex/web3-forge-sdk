@@ -1,4 +1,4 @@
-import { Contract, formatUnits, MaxUint256, parseUnits, solidityPacked, ZeroAddress } from "ethers";
+import { Contract, formatUnits, id, MaxUint256, parseUnits, solidityPacked, ZeroAddress } from "ethers";
 
 import { INetworkConfig } from "../types/network";
 import { DexBase } from "./DexBase";
@@ -50,7 +50,7 @@ export class DexBaseKindUniswapV3 extends DexBase {
             },
         });
 
-        if(quoterAddress_ !== ZeroAddress || quoterAddress_ !== '') {
+        if (quoterAddress_ !== ZeroAddress || quoterAddress_ !== '') {
             this._quoterContract = new Contract(
                 quoterAddress_,
                 overrides?.quoterAbi ?? quoterAbi,
@@ -61,15 +61,70 @@ export class DexBaseKindUniswapV3 extends DexBase {
 
 
     public get quoterAddress(): string {
-        if(this._quoterContract !== null) {
+        if (this._quoterContract !== null) {
             return this._quoterContract.target as string;
         }
         return ZeroAddress;
     }
 
+    public async getPoolData(path: string[]): Promise<{
+        poolAddress: string;
+        token0: string;
+        token1: string;
+        reserves0: bigint;
+        reserves1: bigint;
+    }[]> {
+        const splitedPaths = this.splitPath(path);
+
+        if (splitedPaths.length === 0) {
+            throw new Error('No allowed paths provided');
+        }
+
+        const poolData: {
+            poolAddress: string;
+            token0: string;
+            token1: string;
+            reserves0: bigint;
+            reserves1: bigint;
+        }[] = [];
+        for (const path of splitedPaths) {
+            const pair = await this.getPoolAddress(path);
+            const pairContract = new Contract(pair, poolAbi, this._provider);
+
+            const [
+                token0,
+                token1,
+            ] = await Promise.all([
+                pairContract.token0(),
+                pairContract.token1(),
+            ]);
+
+            const token0Contract = new Contract(token0, erc20Abi, this._provider);
+            const token1Contract = new Contract(token1, erc20Abi, this._provider);
+
+            const [
+                balance0,
+                balance1
+            ] = await Promise.all([
+                token0Contract.balanceOf(pair),
+                token1Contract.balanceOf(pair),
+            ]);
+
+            poolData.push({
+                poolAddress: pair,
+                token0,
+                token1,
+                reserves0: balance0,
+                reserves1: balance1,
+            })
+        }
+
+        return poolData;
+    }
+
 
     public async getTokenPrice(path: (string | number | bigint)[]): Promise<number> {
-        if(this._quoterContract === null) {
+        if (this._quoterContract === null) {
             throw new Error('Quoter contract is not initialized');
         }
 
@@ -98,6 +153,17 @@ export class DexBaseKindUniswapV3 extends DexBase {
         const fee = path[1] as number;
 
         return await this._factoryContract.getPool(token0, token1, fee);
+    }
+
+    public async getPoolAddresses(path: (string | number | bigint)[]): Promise<string[]> {
+        const poolPairs = this.splitPath(path);
+        const pairsArray: string[] = []
+
+        for (const poolPair of poolPairs) {
+            pairsArray.push(await this.getPoolAddress(poolPair));
+        }
+
+        return pairsArray;
     }
 
     public async getPoolCount(): Promise<number> {
@@ -234,6 +300,53 @@ export class DexBaseKindUniswapV3 extends DexBase {
         return reverseCopy<string>(path);
     }
 
+    public getDecodedSwapData(token0: string, token1: string, data: string): { tokenFrom: string; tokenTo: string; amountsIn: bigint; amountsOut: bigint; } {
+        const t0 = token0.toLowerCase();
+        const t1 = token1.toLowerCase();
+
+        // В data лежат только НЕиндексированные поля, в порядке ниже:
+        const [amount0, amount1 /* sqrtPriceX96, liquidity, tick */] = this._coder.decode(
+            ["int256", "int256", "uint160", "uint128", "int24"],
+            data
+        ) as unknown as [bigint, bigint, bigint, bigint, number];
+
+        // В V3 знак означает направление потока относительно пула:
+        // amountX > 0  => трейдер внёс X в пул (вход)
+        // amountX < 0  => трейдер получил X из пула (выход)
+        if (amount0 > 0n && amount1 < 0n) {
+            // внёс token0, получил token1
+            return {
+                tokenFrom: t0,
+                tokenTo: t1,
+                amountsIn: amount0,
+                amountsOut: -amount1
+            };
+        }
+        if (amount1 > 0n && amount0 < 0n) {
+            // внёс token1, получил token0
+            return {
+                tokenFrom: t1,
+                tokenTo: t0,
+                amountsIn: amount1,
+                amountsOut: -amount0
+            };
+        }
+
+        // редкие случаи (напр., нулевые суммы) считаем невалидными для свопа
+        throw new Error("UniswapV3 swap decode: ambiguous or zero amounts");
+    }
+
+    public getSwapEventSignature(): {
+        event: string,
+        id: string,
+    } {
+        const rawEvent = 'Swap(address,address,int256,int256,uint160,uint128,int24)';
+        return {
+            event: rawEvent,
+            id: id(rawEvent),
+        };
+    }
+
 
     // HELPERS
     private _encodePath<T>(path: T[]) {
@@ -265,7 +378,7 @@ export class DexBaseKindUniswapV3 extends DexBase {
     }[]> {
         // const filter = this._factoryContract.filters.PoolCreated();
         // const latestBlock = await this._provider.getBlockNumber();
-        
+
         // const results: {
         //     token0: string;
         //     token1: string;

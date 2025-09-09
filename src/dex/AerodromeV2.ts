@@ -1,4 +1,4 @@
-import { Contract, parseUnits, formatUnits, ZeroAddress } from "ethers";
+import { Contract, parseUnits, formatUnits, ZeroAddress, id } from "ethers";
 import { INetworkConfig } from "../types/network";
 import { erc20Abi } from "../erc20/abi/erc20-abi";
 import { aerodromeV2RouterAbi, aerodromeV2FactoryAbi, aerodromeV2CLFactoryAbi, aerodromeV2PoolAbi, aerodromeV2CLPoolAbi } from "./abi/aerodrome";
@@ -46,6 +46,50 @@ export class AerodromeV2 extends DexBase {
 
         this._clfactoryContract = new Contract(addresses.clfactory, aerodromeV2CLFactoryAbi, this._provider);
     }
+
+     public async getPoolData(path: string[]): Promise<{
+            poolAddress: string;
+            token0: string;
+            token1: string;
+            reserves0: bigint;
+            reserves1: bigint;
+        }[]> {
+            const splitedPaths = this.splitPath(path);
+    
+            if(splitedPaths.length === 0) {
+                throw new Error('No allowed paths provided');
+            }
+    
+            const poolData: {
+                poolAddress: string;
+                token0: string;
+                token1: string;
+                reserves0: bigint;
+                reserves1: bigint;
+            }[] = [];
+            for(const path of splitedPaths) {
+                const pair = await this.getPoolAddress(path);
+                const pairContract = new Contract(pair, aerodromeV2PoolAbi, this._provider);
+    
+                const [
+                    tokens,
+                    reserves,
+                ] = await Promise.all([
+                    pairContract.tokens(),
+                    pairContract.getReserves(),
+                ]);
+    
+                poolData.push({
+                    poolAddress: pair,
+                    token0: tokens[0],
+                    token1: tokens[1],
+                    reserves0: reserves[0],
+                    reserves1: reserves[1],
+                })
+            }
+    
+            return poolData;
+        }
 
     // в параметр path вставляем два токена для находа пары
     // цена будет возвращаться по первому токену из пары вставленному в path
@@ -95,7 +139,7 @@ export class AerodromeV2 extends DexBase {
         const clFactoryPoolCountMinusOne = Number(clFactoryPoolCount) - 1;
         const factoryPoolCountMinusOne = Number(factoryPoolCount) - 1;
 
-        if(index > clFactoryPoolCountMinusOne && index > factoryPoolCountMinusOne) {
+        if (index > clFactoryPoolCountMinusOne && index > factoryPoolCountMinusOne) {
             return {
                 clFactoryPool: ZeroAddress,
                 clPool: ZeroAddress,
@@ -147,6 +191,50 @@ export class AerodromeV2 extends DexBase {
         );
     }
 
+    public async getPoolAddresses(path: (string | boolean | number | bigint)[]): Promise<string[]> {
+        const poolPairs = this.splitPath(path);
+        const pairsArray: string[] = []
+
+        for (const poolPair of poolPairs) {
+            pairsArray.push(await this.getPoolAddress(poolPair));
+        }
+
+        return pairsArray;
+    }
+
+    public getDecodedSwapData(token0: string, token1: string, data: string): { tokenFrom: string; tokenTo: string; amountsIn: bigint; amountsOut: bigint; } {
+        const t0 = token0.toLowerCase();
+        const t1 = token1.toLowerCase();
+
+        const [amount0In, amount1In, amount0Out, amount1Out] = this._coder.decode(
+            ["uint256", "uint256", "uint256", "uint256"],
+            data
+        ) as unknown as [bigint, bigint, bigint, bigint];
+
+        // Логика идентична UniswapV2:
+        // один из In > 0 и противоположный Out > 0
+        if (amount0In > 0n) {
+            // трейдер внёс token0, получил token1
+            return {
+                tokenFrom: t0,
+                tokenTo: t1,
+                amountsIn: amount0In,
+                amountsOut: amount1Out
+            };
+        }
+        if (amount1In > 0n) {
+            // трейдер внёс token1, получил token0
+            return {
+                tokenFrom: t1,
+                tokenTo: t0,
+                amountsIn: amount1In,
+                amountsOut: amount0Out
+            };
+        }
+
+        throw new Error("Aerodrome swap decode: both amount0In and amount1In are zero");
+    }
+
     public async getPoolReserves(path: (string | boolean | number | bigint)[]): Promise<{
         reserve0: number,
         reserve1: number,
@@ -159,7 +247,7 @@ export class AerodromeV2 extends DexBase {
         const token1 = new ERC20(path[path.length - 1] as string, this._provider);
         const pair = await this.getPoolAddress(path);
 
-        if(pair === ZeroAddress) {
+        if (pair === ZeroAddress) {
             return {
                 reserve0: 0,
                 reserve1: 0,
@@ -176,8 +264,8 @@ export class AerodromeV2 extends DexBase {
             ]);
 
             return {
-                reserve0: Number(reserve0) / 10**Number(decimals0),
-                reserve1: Number(reserve1) / 10**Number(decimals1),
+                reserve0: Number(reserve0) / 10 ** Number(decimals0),
+                reserve1: Number(reserve1) / 10 ** Number(decimals1),
                 blockTimestampLast: Number(blockTimestampLast),
             };
         }
@@ -313,6 +401,17 @@ export class AerodromeV2 extends DexBase {
         }
 
         return routes;
+    }
+
+    public getSwapEventSignature(): {
+        event: string,
+        id: string,
+    } {
+        const rawEvent = 'Swap(address indexed,address indexed,uint256,uint256,uint256,uint256)';
+        return {
+            event: rawEvent,
+            id: id(rawEvent),
+        };
     }
 }
 

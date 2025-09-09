@@ -1,4 +1,4 @@
-import { Contract, MaxUint256, parseUnits } from "ethers";
+import { Contract, id, isAddress, MaxUint256, parseUnits } from "ethers";
 
 import { INetworkConfig, Network } from "../types/network";
 import { DexBase } from "./DexBase";
@@ -48,6 +48,52 @@ export class DexBaseKindUniswapV2 extends DexBase {
         });
     }
 
+    public async getPoolData(path: string[]): Promise<{
+        poolAddress: string;
+        token0: string;
+        token1: string;
+        reserves0: bigint;
+        reserves1: bigint;
+    }[]> {
+        const splitedPaths = this.splitPath(path);
+
+        if(splitedPaths.length === 0) {
+            throw new Error('No allowed paths provided');
+        }
+
+        const poolData: {
+            poolAddress: string;
+            token0: string;
+            token1: string;
+            reserves0: bigint;
+            reserves1: bigint;
+        }[] = [];
+        for(const path of splitedPaths) {
+            const pair = await this.getPoolAddress(path);
+            const pairContract = new Contract(pair, pairAbi, this._provider);
+
+            const [
+                token0,
+                token1,
+                reserves,
+            ] = await Promise.all([
+                pairContract.token0(),
+                pairContract.token1(),
+                pairContract.getReserves(),
+            ]);
+
+            poolData.push({
+                poolAddress: pair,
+                token0,
+                token1,
+                reserves0: reserves[0],
+                reserves1: reserves[1],
+            })
+        }
+
+        return poolData;
+    }
+
 
     public async getTokenPrice(path: string[]): Promise<number> {
         const token = new Contract(path[0], erc20Abi, this._provider);
@@ -64,6 +110,18 @@ export class DexBaseKindUniswapV2 extends DexBase {
 
     public async getPoolAddress(path: string[]): Promise<string> {
         return await this._factoryContract.getPair(path[0], path[1]);
+    }
+
+    
+    public async getPoolAddresses(path: string[]): Promise<string[]> {
+        const poolPairs = this.splitPath(path);
+        const pairsArray: string[] = []
+
+        for(const poolPair of poolPairs) {
+            pairsArray.push(await this.getPoolAddress(poolPair));
+        }
+
+        return pairsArray;
     }
 
     public async getPoolCount(): Promise<number> {
@@ -104,12 +162,15 @@ export class DexBaseKindUniswapV2 extends DexBase {
     }
 
     public splitPath(path: string[]): string[][] {
-        if(path.length === 1) {
-            return [];
+        for(const token of path) {
+            if(isAddress(token)) {
+                continue;
+            } else {
+                return [];
+            }
         }
-        if(path.length === 2) {
-            return [path];
-        }
+        if(path.length === 1) return [];
+        if(path.length === 2) return [path];
 
         const pools: string[][] = [];
         for (let i = 0; i < path.length - 1; i++) {
@@ -174,8 +235,51 @@ export class DexBaseKindUniswapV2 extends DexBase {
         );
     }
 
+    public getDecodedSwapData(token0: string, token1: string, data: string): { tokenFrom: string; tokenTo: string; amountsIn: bigint; amountsOut: bigint; } {
+        const t0 = token0.toLowerCase();
+        const t1 = token1.toLowerCase();
+
+        const [amount0In, amount1In, amount0Out, amount1Out] = this._coder.decode(
+            ["uint256", "uint256", "uint256", "uint256"],
+            data
+        ) as unknown as [bigint, bigint, bigint, bigint];
+
+        if (amount0In > 0n) {
+            // трейдер внёс token0 и получил token1
+            return {
+                tokenFrom: t0,
+                tokenTo: t1,
+                amountsIn: amount0In,
+                amountsOut: amount1Out
+            };
+        }
+        if (amount1In > 0n) {
+            // трейдер внёс token1 и получил token0
+            return {
+                tokenFrom: t1,
+                tokenTo: t0,
+                amountsIn: amount1In,
+                amountsOut: amount0Out
+            };
+        }
+
+        // если все инпуты нулевые — странный кейс, считаем ошибкой
+        throw new Error("UniswapV2 swap decode: both amount0In and amount1In are zero");
+    }
+
     public getReversedPath(path: string[]): string[] {
         return reverseCopy<string>(path);
+    }
+
+    public getSwapEventSignature(): {
+        event: string,
+        id: string,
+    } {
+        const rawEvent = 'Swap(address,uint256,uint256,uint256,uint256,address)';
+        return {
+            event: rawEvent,
+            id: id(rawEvent),
+        };
     }
 }
 

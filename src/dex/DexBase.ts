@@ -1,4 +1,5 @@
 import {
+    AbiCoder,
     Contract,
     JsonRpcProvider,
 } from "ethers";
@@ -11,6 +12,7 @@ export abstract class DexBase {
     protected readonly _provider: JsonRpcProvider;
     protected readonly _routerContract: Contract;
     protected readonly _factoryContract: Contract;
+    protected readonly _coder = AbiCoder.defaultAbiCoder();
 
     public readonly dexParams: {
         type: DexType,
@@ -40,6 +42,7 @@ export abstract class DexBase {
 
     public abstract getFactoryAddress(): Promise<string>;
     public abstract getPoolAddress(path: (string | any)[]): Promise<any>;
+    public abstract getPoolAddresses(path: (string | any)[]): Promise<any>;
     public abstract getPoolCount(): Promise<number | any>;
     public abstract getPoolReserves(path: (string | any)[]): Promise<any>;
     public abstract getPoolAddressByIndex(index: number): Promise<string | any>;
@@ -54,6 +57,26 @@ export abstract class DexBase {
         data: string,
         topHalf: string,
         bottomHalf: string,
+    }
+
+    public abstract getPoolData(path: (string | any)[]): Promise<{
+        poolAddress: string;
+        token0: string;
+        token1: string;
+        reserves0: bigint;
+        reserves1: bigint;
+    }[]>;
+
+    public abstract getSwapEventSignature(): {
+        event: string,
+        id: string
+    };
+
+    public abstract getDecodedSwapData(token0: string, token1: string, data: string): {
+        tokenFrom: string,
+        tokenTo: string,
+        amountsIn: bigint,
+        amountsOut: bigint,
     }
 
     public abstract getReversedPath(path: (string | any)[]): (string | any)[];
