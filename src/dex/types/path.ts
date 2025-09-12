@@ -1,0 +1,1 @@
+export type TPathSegment = (string | number | bigint | boolean);
