@@ -1,7 +1,6 @@
 
 import chunk from "../../utils/chunk";
-import { ERC20 } from "../../erc20/contracts/ERC20";
-import { Weth } from "../../erc20/tokens/weth";
+import { Weth, ERC20 } from "../../erc20";
 import { INetworkConfig } from "../../types/network";
 import { getEnumValuesArray } from "../../utils/get-enum-values-array";
 import { DexBase } from "../DexBase";
