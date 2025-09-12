@@ -1,20 +1,21 @@
-import { Contract, Wallet, JsonRpcSigner, type ContractRunner, TransactionResponse } from "ethers";
+import { Contract, Wallet, JsonRpcSigner, type ContractRunner, TransactionResponse, JsonRpcProvider } from "ethers";
 import { erc20Abi } from "../abi/erc20-abi";
 import { isObjectAddressable } from "../../utils/is-object-addressable";
+import { INetworkConfig } from "../../types/network";
 import { IAddressable } from "../../types/IAddressable";
 
-export class ERC20 {
+export class ERC20 implements IAddressable {
     private _contract: Contract;
     private readonly _runner: ContractRunner | null | undefined;
 
-    constructor(address: string, runner?: ContractRunner | null | undefined) {
-        this._contract = new Contract(address, erc20Abi, runner);
-        this._runner = runner;
-    }
-
-
-    public get runner(): ContractRunner | Wallet | JsonRpcSigner | IAddressable | null | undefined {
-        return this._runner;
+    constructor(address: string, network: INetworkConfig) {
+        const provider = new JsonRpcProvider(
+            network.rpcUrl,
+            { chainId: network.id, name: "custom" },
+            { staticNetwork: true}
+        );
+        this._contract = new Contract(address, erc20Abi, provider);
+        this._runner = provider;
     }
 
     public get interface() {

@@ -1,4 +1,3 @@
-import { JsonRpcProvider } from "ethers";
 import { INetworkConfig, Network } from "../../types/network";
 import { ERC20 } from "../contracts/ERC20";
 
@@ -10,9 +9,7 @@ const wethAddresses = new Map<Network, string>([
 
 export class Weth extends ERC20 {
     constructor(network: INetworkConfig, overrides?: {address: string}) {
-        const provider = new JsonRpcProvider(network.rpcUrl);
         const address = overrides?.address ?? wethAddresses.get(network.id) ?? '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
-        
-        super(address, provider);
+        super(address, network);
     }
 }
