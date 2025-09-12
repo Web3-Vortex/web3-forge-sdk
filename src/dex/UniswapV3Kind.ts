@@ -89,6 +89,10 @@ export class DexBaseKindUniswapV3 extends DexBase {
         }[] = [];
         for (const path of splitedPaths) {
             const pair = await this.getPoolAddress(path);
+
+            if(pair === ZeroAddress) {
+                continue;
+            }
             const pairContract = new Contract(pair, poolAbi, this._provider);
 
             const [
@@ -194,8 +198,8 @@ export class DexBaseKindUniswapV3 extends DexBase {
 
         const sqrtPriceX96 = sqrtPriceX96Struct.sqrtPriceX96 ?? sqrtPriceX96Struct[0]; // совместимость
 
-        const erc0 = new ERC20(token0, this._provider);
-        const erc1 = new ERC20(token1, this._provider);
+        const erc0 = new ERC20(token0, this._network);
+        const erc1 = new ERC20(token1, this._network);
 
         const [dec0, dec1] = await Promise.all([
             erc0.getDecimals(),

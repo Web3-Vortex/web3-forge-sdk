@@ -7,9 +7,12 @@ import {
     type DexType,
     type IDexParams
 } from "./types/IDexParams";
+import { TPathSegment } from "./types/path";
+import { INetworkConfig } from "../types/network";
 
 export abstract class DexBase {
     protected readonly _provider: JsonRpcProvider;
+    protected readonly _network: INetworkConfig;
     protected readonly _routerContract: Contract;
     protected readonly _factoryContract: Contract;
     protected readonly _coder = AbiCoder.defaultAbiCoder();
@@ -20,14 +23,24 @@ export abstract class DexBase {
     };
 
     constructor(params: IDexParams) {
-        const network = params.network;
+        this._network = params.network;
 
         this.dexParams = {
             type: params.type,
             name: params.name,
         };
         
-        this._provider = new JsonRpcProvider(network.rpcUrl, network.id);
+        this._provider = new JsonRpcProvider(
+            params.network.rpcUrl,
+            {
+                chainId: params.network.id,
+                name: "custom",
+            },
+            {
+                staticNetwork: true,
+            }
+        );
+        
         this._factoryContract = new Contract(params.factory.address, params.factory.abi, this._provider);
         this._routerContract = new Contract(params.router.address, params.router.abi, this._provider);
     }
@@ -41,15 +54,15 @@ export abstract class DexBase {
     }
 
     public abstract getFactoryAddress(): Promise<string>;
-    public abstract getPoolAddress(path: (string | any)[]): Promise<any>;
-    public abstract getPoolAddresses(path: (string | any)[]): Promise<any>;
+    public abstract getPoolAddress(path: TPathSegment[]): Promise<any>;
+    public abstract getPoolAddresses(path: TPathSegment[]): Promise<any>;
     public abstract getPoolCount(): Promise<number | any>;
-    public abstract getPoolReserves(path: (string | any)[]): Promise<any>;
+    public abstract getPoolReserves(path: TPathSegment[]): Promise<any>;
     public abstract getPoolAddressByIndex(index: number): Promise<string | any>;
-    public abstract getTokenPrice(path: (string | any)[]): Promise<any>;
+    public abstract getTokenPrice(path: TPathSegment[]): Promise<any>;
     public abstract getEncodedSwap(
         amountsIn: bigint,
-        path: (string | any)[],
+        path: TPathSegment[],
         sendTo: string,
         slippage: number,
         ...params: any
@@ -59,7 +72,7 @@ export abstract class DexBase {
         bottomHalf: string,
     }
 
-    public abstract getPoolData(path: (string | any)[]): Promise<{
+    public abstract getPoolData(path: TPathSegment[]): Promise<{
         poolAddress: string;
         token0: string;
         token1: string;
@@ -79,13 +92,13 @@ export abstract class DexBase {
         amountsOut: bigint,
     }
 
-    public abstract getReversedPath(path: (string | any)[]): (string | any)[];
+    public abstract getReversedPath(path: TPathSegment[]): TPathSegment[];
 
-    public abstract splitPath(path: (string | any)[]): (string | any)[][];
+    public abstract splitPath(path: TPathSegment[]): TPathSegment[][];
     public abstract simulateSwap(
         from: string,
         amountsIn: bigint,
-        path: (string | any)[],
+        path: TPathSegment[],
         sendTo: string
     ): Promise<any>;
 }

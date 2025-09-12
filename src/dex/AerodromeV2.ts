@@ -47,7 +47,7 @@ export class AerodromeV2 extends DexBase {
         this._clfactoryContract = new Contract(addresses.clfactory, aerodromeV2CLFactoryAbi, this._provider);
     }
 
-     public async getPoolData(path: string[]): Promise<{
+    public async getPoolData(path: string[]): Promise<{
             poolAddress: string;
             token0: string;
             token1: string;
@@ -69,6 +69,11 @@ export class AerodromeV2 extends DexBase {
             }[] = [];
             for(const path of splitedPaths) {
                 const pair = await this.getPoolAddress(path);
+
+                if(pair === ZeroAddress) {
+                    continue;
+                }
+                
                 const pairContract = new Contract(pair, aerodromeV2PoolAbi, this._provider);
     
                 const [
@@ -243,8 +248,8 @@ export class AerodromeV2 extends DexBase {
         liquidity?: string,
     }> {
         const isFeePool = typeof path[1] !== 'boolean';
-        const token0 = new ERC20(path[0] as string, this._provider);
-        const token1 = new ERC20(path[path.length - 1] as string, this._provider);
+        const token0 = new ERC20(path[0] as string, this._network);
+        const token1 = new ERC20(path[path.length - 1] as string, this._network);
         const pair = await this.getPoolAddress(path);
 
         if (pair === ZeroAddress) {

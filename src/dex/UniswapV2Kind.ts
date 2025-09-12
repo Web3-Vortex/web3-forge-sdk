@@ -1,4 +1,4 @@
-import { Contract, id, isAddress, MaxUint256, parseUnits } from "ethers";
+import { Contract, id, isAddress, MaxUint256, parseUnits, ZeroAddress } from "ethers";
 
 import { INetworkConfig, Network } from "../types/network";
 import { DexBase } from "./DexBase";
@@ -70,6 +70,11 @@ export class DexBaseKindUniswapV2 extends DexBase {
         }[] = [];
         for(const path of splitedPaths) {
             const pair = await this.getPoolAddress(path);
+            
+            if(pair === ZeroAddress) {
+                continue;
+            }
+            
             const pairContract = new Contract(pair, pairAbi, this._provider);
 
             const [
@@ -141,8 +146,8 @@ export class DexBaseKindUniswapV2 extends DexBase {
         const pairContract = new Contract(pair, pairAbi, this._provider);
         const [reserve0, reserve1, blockTimestampLast] = await pairContract.getReserves();
 
-        const token0 = new ERC20(path[0], this._provider);
-        const token1 = new ERC20(path[path.length - 1], this._provider);
+        const token0 = new ERC20(path[0], this._network);
+        const token1 = new ERC20(path[path.length - 1], this._network);
 
         const [decimals0, decimals1] = await Promise.all([
             token0.getDecimals(),
