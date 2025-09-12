@@ -1,6 +1,7 @@
 // Dex exports
 export * from "./src/dex/types/IDexParams";
 export * from "./src/dex/types/fees";
+export * from "./src/dex/types/path";
 
 export * from "./src/dex/abi/aerodrome";
 export * from "./src/dex/abi/ixswap-v2";
@@ -22,6 +23,7 @@ export * from "./src/dex/utils/PathMaker";
 export * as erc20Abis from "./src/erc20/abi/erc20-abi";
 export * from "./src/erc20/contracts/ERC20";
 export * from "./src/erc20/tokens/weth";
+export * from "./src/erc20/types";
 
 
 // Types
