@@ -1,5 +1,5 @@
 export interface IToken {
     name: string;
     symbol: string;
-    decimals: bigint;
+    decimals: number;
 }
