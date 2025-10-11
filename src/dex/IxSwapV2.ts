@@ -4,6 +4,7 @@ import { ixswapV2Addresses } from "./addresses/uniswap-v2-kind/ixswap-v2";
 import { DexBaseKindUniswapV2 } from "./UniswapV2Kind";
 import { routerAbi } from "./abi/ixswap-v2";
 import { erc20Abi } from "../erc20/abi/erc20-abi";
+import { DexInterfaceName } from "./types/IDexParams";
 
 const emptyAuthorisation = {
     operator: '0x0000000000000000000000000000000000000000',
@@ -18,14 +19,14 @@ export class IxSwapV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = ixswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'IXSwap V2',
+            overrides?.name ?? DexInterfaceName.IXSwap,
             routerAbi,
         );
     }

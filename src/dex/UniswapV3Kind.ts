@@ -2,7 +2,7 @@ import { Contract, formatUnits, id, MaxUint256, parseUnits, solidityPacked, Zero
 
 import { INetworkConfig } from "../types/network";
 import { DexBase } from "./DexBase";
-import { DexType } from "./types/IDexParams";
+import { DexInterfaceName, DexType } from "./types/IDexParams";
 import { erc20Abi } from "../erc20/abi/erc20-abi";
 import { cutEncodedDataParams } from "../utils/cut-encoded-data-params";
 import { quoterAbi, routerAbi, factoryAbi, poolAbi } from "./abi/uniswap-v3";
@@ -29,7 +29,7 @@ export class DexBaseKindUniswapV3 extends DexBase {
         factoryAddress_: string,
         quoterAddress_: string,
         network: INetworkConfig,
-        name?: string,
+        name?: DexInterfaceName,
         overrides?: {
             routerAbi: any,
             factoryAbi: any,
@@ -39,7 +39,7 @@ export class DexBaseKindUniswapV3 extends DexBase {
         super({
             network,
             type: DexType.UniswapV3,
-            name: name ?? 'Uniswap V3',
+            name: name ?? DexInterfaceName.UniswapV3,
             router: {
                 address: routerAddress_,
                 abi: overrides?.routerAbi ?? routerAbi,
@@ -459,7 +459,7 @@ export class UniswapV3 extends DexBaseKindUniswapV3 {
         routerAddress: string,
         factoryAddress: string,
         quoterAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = uniswapV3Addresses.get(network.id)!;
         super(
@@ -467,7 +467,7 @@ export class UniswapV3 extends DexBaseKindUniswapV3 {
             overrides?.factoryAddress ?? addresses.factory,
             overrides?.quoterAddress ?? addresses.quoter,
             network,
-            overrides?.name ?? 'Uniswap V3'
+            overrides?.name ?? DexInterfaceName.UniswapV3
         );
     }
 }
@@ -478,7 +478,7 @@ export class PancakeSwapV3 extends DexBaseKindUniswapV3 {
         routerAddress: string,
         factoryAddress: string,
         quoterAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = pancakeswapV3Addresses.get(network.id)!;
         super(
@@ -486,7 +486,7 @@ export class PancakeSwapV3 extends DexBaseKindUniswapV3 {
             overrides?.factoryAddress ?? addresses.factory,
             overrides?.quoterAddress ?? addresses.quoter,
             network,
-            overrides?.name ?? 'PancakeSwap V3'
+            overrides?.name ?? DexInterfaceName.PancakeSwapV3
         );
     }
 }
@@ -497,7 +497,7 @@ export class SushiSwapV3 extends DexBaseKindUniswapV3 {
         routerAddress: string,
         factoryAddress: string,
         quoterAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = sushiswapV3Addresses.get(network.id)!;
         super(
@@ -505,7 +505,7 @@ export class SushiSwapV3 extends DexBaseKindUniswapV3 {
             overrides?.factoryAddress ?? addresses.factory,
             overrides?.quoterAddress ?? addresses.quoter,
             network,
-            overrides?.name ?? 'SushiSwap V3'
+            overrides?.name ?? DexInterfaceName.SushiSwapV3
         );
     }
 }
@@ -516,7 +516,7 @@ export class DerpDexV3 extends DexBaseKindUniswapV3 {
         routerAddress: string,
         factoryAddress: string,
         quoterAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = derpdexV3Addresses.get(network.id)!;
         super(
@@ -524,7 +524,7 @@ export class DerpDexV3 extends DexBaseKindUniswapV3 {
             overrides?.factoryAddress ?? addresses.factory,
             overrides?.quoterAddress ?? addresses.quoter,
             network,
-            overrides?.name ?? 'DerpDex V3'
+            overrides?.name ?? DexInterfaceName.DerpDexV3
         );
     }
 }
@@ -534,7 +534,7 @@ export class ThroneV3 extends DexBaseKindUniswapV3 {
         routerAddress: string,
         factoryAddress: string,
         quoterAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = throneV3Addresses.get(network.id)!;
         super(
@@ -542,7 +542,7 @@ export class ThroneV3 extends DexBaseKindUniswapV3 {
             overrides?.factoryAddress ?? addresses.factory,
             overrides?.quoterAddress ?? addresses.quoter,
             network,
-            overrides?.name ?? 'Throne V3'
+            overrides?.name ?? DexInterfaceName.ThroneV3
         );
     }
 }
@@ -553,7 +553,7 @@ export class HorizonDexV3 extends DexBaseKindUniswapV3 {
         routerAddress: string,
         factoryAddress: string,
         quoterAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = horizonDexV3Addresses.get(network.id)!;
         super(
@@ -561,7 +561,7 @@ export class HorizonDexV3 extends DexBaseKindUniswapV3 {
             overrides?.factoryAddress ?? addresses.factory,
             overrides?.quoterAddress ?? addresses.quoter,
             network,
-            overrides?.name ?? 'Horizon Dex V3'
+            overrides?.name ?? DexInterfaceName.HorizonDexV3
         );
     }
 }
@@ -572,7 +572,7 @@ export class SwapBasedAmmV3 extends DexBaseKindUniswapV3 {
         routerAddress: string,
         factoryAddress: string,
         quoterAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = swapBasedAmmV3Addresses.get(network.id)!;
         super(
@@ -580,7 +580,7 @@ export class SwapBasedAmmV3 extends DexBaseKindUniswapV3 {
             overrides?.factoryAddress ?? addresses.factory,
             overrides?.quoterAddress ?? addresses.quoter,
             network,
-            overrides?.name ?? 'Swap Based Amm V3'
+            overrides?.name ?? DexInterfaceName.SwapBasedAmmV3
         );
     }
 }
@@ -591,7 +591,7 @@ export class BaseSwapV3 extends DexBaseKindUniswapV3 {
         routerAddress: string,
         factoryAddress: string,
         quoterAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = baseswapV3Addresses.get(network.id)!;
         super(
@@ -599,7 +599,7 @@ export class BaseSwapV3 extends DexBaseKindUniswapV3 {
             overrides?.factoryAddress ?? addresses.factory,
             overrides?.quoterAddress ?? addresses.quoter,
             network,
-            overrides?.name ?? 'Base Swap V3'
+            overrides?.name ?? DexInterfaceName.BaseSwapV3
         );
     }
 }
@@ -610,7 +610,7 @@ export class KinetixV3 extends DexBaseKindUniswapV3 {
         routerAddress: string,
         factoryAddress: string,
         quoterAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = kinetixV3Addresses.get(network.id)!;
         super(
@@ -618,7 +618,7 @@ export class KinetixV3 extends DexBaseKindUniswapV3 {
             overrides?.factoryAddress ?? addresses.factory,
             overrides?.quoterAddress ?? addresses.quoter,
             network,
-            overrides?.name ?? 'Kinetix V3'
+            overrides?.name ?? DexInterfaceName.KinetixV3
         );
     }
 }
@@ -629,7 +629,7 @@ export class DackieSwapV3 extends DexBaseKindUniswapV3 {
         routerAddress: string,
         factoryAddress: string,
         quoterAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = dackieswapV3Addresses.get(network.id)!;
         super(
@@ -637,7 +637,7 @@ export class DackieSwapV3 extends DexBaseKindUniswapV3 {
             overrides?.factoryAddress ?? addresses.factory,
             overrides?.quoterAddress ?? addresses.quoter,
             network,
-            overrides?.name ?? 'DackieSwap V3'
+            overrides?.name ?? DexInterfaceName.DackieSwapV3
         );
     }
 }
@@ -648,7 +648,7 @@ export class WagmiV3 extends DexBaseKindUniswapV3 {
         routerAddress: string,
         factoryAddress: string,
         quoterAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = wagmiV3Addresses.get(network.id)!;
         super(
@@ -656,7 +656,7 @@ export class WagmiV3 extends DexBaseKindUniswapV3 {
             overrides?.factoryAddress ?? addresses.factory,
             overrides?.quoterAddress ?? addresses.quoter,
             network,
-            overrides?.name ?? 'Wagmi V3'
+            overrides?.name ?? DexInterfaceName.WagmiV3
         );
     }
 }
@@ -667,7 +667,7 @@ export class AlienBaseV3 extends DexBaseKindUniswapV3 {
         routerAddress: string,
         factoryAddress: string,
         quoterAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = alienbaseV3Addresses.get(network.id)!;
         super(
@@ -675,7 +675,7 @@ export class AlienBaseV3 extends DexBaseKindUniswapV3 {
             overrides?.factoryAddress ?? addresses.factory,
             overrides?.quoterAddress ?? addresses.quoter,
             network,
-            overrides?.name ?? 'Alien Base V3'
+            overrides?.name ?? DexInterfaceName.AlienBaseV3
         );
     }
 }

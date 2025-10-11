@@ -4,7 +4,7 @@ import { erc20Abi } from "../erc20/abi/erc20-abi";
 import { aerodromeV2RouterAbi, aerodromeV2FactoryAbi, aerodromeV2CLFactoryAbi, aerodromeV2PoolAbi, aerodromeV2CLPoolAbi } from "./abi/aerodrome";
 import { aerodromeV2Addresses } from "./addresses/uniswap-v2-kind/aerodrome-v2";
 import { DexBase } from "./DexBase";
-import { DexType } from "./types/IDexParams";
+import { DexInterfaceName, DexType } from "./types/IDexParams";
 import { ERC20 } from "../erc20/contracts/ERC20";
 import { reverseCopy } from "../utils/reverse-copy";
 
@@ -27,13 +27,13 @@ export class AerodromeV2 extends DexBase {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = aerodromeV2Addresses.get(network.id)!;
         super({
             network,
             type: DexType.AerodromeV2,
-            name: overrides?.name ?? 'Aerodrome V2',
+            name: overrides?.name ?? DexInterfaceName.AerodromeV2,
             router: {
                 address: overrides?.routerAddress ?? addresses.router,
                 abi: aerodromeV2RouterAbi,

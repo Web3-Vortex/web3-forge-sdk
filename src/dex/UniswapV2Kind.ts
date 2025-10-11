@@ -2,7 +2,7 @@ import { Contract, id, isAddress, MaxUint256, parseUnits, ZeroAddress } from "et
 
 import { INetworkConfig, Network } from "../types/network";
 import { DexBase } from "./DexBase";
-import { DexType } from "./types/IDexParams";
+import { DexInterfaceName, DexType } from "./types/IDexParams";
 import { routerAbi, factoryAbi, pairAbi } from "./abi/uniswap-v2";
 import { erc20Abi } from "../erc20/abi/erc20-abi";
 import { cutEncodedDataParams } from "../utils/cut-encoded-data-params";
@@ -29,14 +29,14 @@ export class DexBaseKindUniswapV2 extends DexBase {
         routerAddress_: string,
         factoryAddress_: string,
         network: INetworkConfig,
-        name?: string,
+        name?: DexInterfaceName,
         routerAbi_?: any,
         factoryAbi_?: any,
     ) {
         super({
             network,
             type: DexType.UniswapV2,
-            name: name ?? 'Uniswap V2',
+            name: name ?? DexInterfaceName.UniswapV2,
             router: {
                 address: routerAddress_,
                 abi: routerAbi_ ?? routerAbi,
@@ -293,14 +293,14 @@ export class UniswapV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = uniswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'Uniswap V2'
+            overrides?.name ?? DexInterfaceName.UniswapV2
         );
     }
 }
@@ -309,14 +309,14 @@ export class PancakeSwapV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = pancakeswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'PancakeSwap V2'
+            overrides?.name ?? DexInterfaceName.PancakeSwapV2
         );
     }
 }
@@ -326,14 +326,14 @@ export class SushiSwapV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = sushiswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'SushiSwap V2'
+            overrides?.name ?? DexInterfaceName.SushiSwapV2
         );
     }
 }
@@ -342,14 +342,14 @@ export class AlienBaseV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = alienbaseV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'AlienBase V2'
+            overrides?.name ?? DexInterfaceName.AlienBaseV2
         );
     }
 }
@@ -359,14 +359,14 @@ export class AlienBaseArea51V2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = alienbaseArea51V2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'AlienBase Area51 V2'
+            overrides?.name ?? DexInterfaceName.AlienBaseArea51V2
         );
     }
 }
@@ -375,14 +375,14 @@ export class DackieSwapV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = dackieswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'DackieSwap V2'
+            overrides?.name ?? DexInterfaceName.DackieSwapV2
         );
     }
 }
@@ -392,14 +392,14 @@ export class RaiFinanceV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = raifinanceV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'Rai Finance V2'
+            overrides?.name ?? DexInterfaceName.RaiFinanceV2
         );
     }
 }
@@ -409,14 +409,14 @@ export class SharkSwapV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = sharkswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'SharkSwap V2'
+            overrides?.name ?? DexInterfaceName.SharkSwapV2
         );
     }
 }
@@ -426,14 +426,14 @@ export class SwapBasedAmmV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = swapbasedammV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'SwapBased Amm V2'
+            overrides?.name ?? DexInterfaceName.SwapBasedAmmV2
         );
     }
 }
@@ -443,14 +443,14 @@ export class LeetSwapV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = leetswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'LeetSwap V2'
+            overrides?.name ?? DexInterfaceName.LeetSwapV2
         );
     }
 }
@@ -460,14 +460,14 @@ export class IcecreamSwapV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = icecreamswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'IcecreamSwap V2'
+            overrides?.name ?? DexInterfaceName.IcecreamSwapV2
         );
     }
 }
@@ -477,14 +477,14 @@ export class ElkV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = elkswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'Elk Swap V2'
+            overrides?.name ?? DexInterfaceName.ElkV2
         );
     }
 }
@@ -494,14 +494,14 @@ export class RocketSwapV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = rocketswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'Rocket Swap V2'
+            overrides?.name ?? DexInterfaceName.RocketSwapV2
         );
     }
 }
@@ -528,14 +528,14 @@ export class BaseSwapV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = baseswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'Base Swap V2'
+            overrides?.name ?? DexInterfaceName.BaseSwapV2
         );
     }
 }
@@ -545,14 +545,14 @@ export class DeltaSwapV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = deltaswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'Delta Swap V2'
+            overrides?.name ?? DexInterfaceName.DeltaSwapV2
         );
     }
 }
@@ -562,14 +562,14 @@ export class RingSwapV2 extends DexBaseKindUniswapV2 {
     constructor(network: INetworkConfig, overrides?: {
         routerAddress: string,
         factoryAddress: string,
-        name?: string,
+        name?: DexInterfaceName,
     }) {
         const addresses = ringswapV2Addresses.get(network.id)!;
         super(
             overrides?.routerAddress ?? addresses.router,
             overrides?.factoryAddress ?? addresses.factory,
             network,
-            overrides?.name ?? 'Ring Swap V2'
+            overrides?.name ?? DexInterfaceName.RingSwapV2
         );
     }
 }

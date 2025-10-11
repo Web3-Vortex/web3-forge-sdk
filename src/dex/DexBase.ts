@@ -4,6 +4,7 @@ import {
     JsonRpcProvider,
 } from "ethers";
 import {
+    DexInterfaceName,
     type DexType,
     type IDexParams
 } from "./types/IDexParams";
@@ -19,7 +20,7 @@ export abstract class DexBase {
 
     public readonly dexParams: {
         type: DexType,
-        name: string,
+        name: DexInterfaceName,
     };
 
     constructor(params: IDexParams) {

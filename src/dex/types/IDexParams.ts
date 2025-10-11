@@ -58,7 +58,7 @@ export type DexInterfaceName = typeof DexInterfaceName[keyof typeof DexInterface
 export interface IDexParams {
     network: INetworkConfig,
     type: DexType,
-    name: string,
+    name: DexInterfaceName,
     factory: IDexContract,
     router: IDexContract,
 }
