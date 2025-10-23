@@ -20,4 +20,4 @@ export * from "./types/fees";
 export * from "./types/path";
 
 // utils
-export * from "./utils/PathMaker";
+export * from "./utils/PoolScraper";

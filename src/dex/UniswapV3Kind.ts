@@ -7,7 +7,7 @@ import { erc20Abi } from "../erc20/abi/erc20-abi";
 import { cutEncodedDataParams } from "../utils/cut-encoded-data-params";
 import { quoterAbi, routerAbi, factoryAbi, poolAbi } from "./abi/uniswap-v3";
 import { reverseCopy } from "../utils/reverse-copy";
-import { ERC20 } from "../erc20/contracts/ERC20";
+import { ERC20 } from "../erc20/tokens/ERC20";
 import { uniswapV3Addresses } from "./addresses/uniswap-v3-kind/uniswap-v3";
 import { sushiswapV3Addresses } from "./addresses/uniswap-v3-kind/sushiswap-v3";
 import { pancakeswapV3Addresses } from "./addresses/uniswap-v3-kind/pancakeswap-v3";
@@ -198,8 +198,8 @@ export class DexBaseKindUniswapV3 extends DexBase {
 
         const sqrtPriceX96 = sqrtPriceX96Struct.sqrtPriceX96 ?? sqrtPriceX96Struct[0]; // совместимость
 
-        const erc0 = new ERC20(token0, this._network);
-        const erc1 = new ERC20(token1, this._network);
+        const erc0 = new ERC20({address: token0, network: this._network});
+        const erc1 = new ERC20({address: token1, network: this._network});
 
         const [dec0, dec1] = await Promise.all([
             erc0.getDecimals(),

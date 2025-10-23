@@ -5,7 +5,7 @@ import { aerodromeV2RouterAbi, aerodromeV2FactoryAbi, aerodromeV2CLFactoryAbi, a
 import { aerodromeV2Addresses } from "./addresses/uniswap-v2-kind/aerodrome-v2";
 import { DexBase } from "./DexBase";
 import { DexInterfaceName, DexType } from "./types/IDexParams";
-import { ERC20 } from "../erc20/contracts/ERC20";
+import { ERC20 } from "../erc20/tokens/ERC20";
 import { reverseCopy } from "../utils/reverse-copy";
 
 
@@ -248,8 +248,14 @@ export class AerodromeV2 extends DexBase {
         liquidity?: string,
     }> {
         const isFeePool = typeof path[1] !== 'boolean';
-        const token0 = new ERC20(path[0] as string, this._network);
-        const token1 = new ERC20(path[path.length - 1] as string, this._network);
+        const token0 = new ERC20({
+            address: path[0] as string,
+            network: this._network,
+        });
+        const token1 = new ERC20({
+            address: path[path.length - 1] as string,
+            network: this._network,
+        });
         const pair = await this.getPoolAddress(path);
 
         if (pair === ZeroAddress) {

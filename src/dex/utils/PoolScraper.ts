@@ -1,6 +1,6 @@
 
 import chunk from "../../utils/chunk";
-import { Weth, ERC20 } from "../../erc20";
+import { WETH9, ERC20 } from "../../erc20";
 import { INetworkConfig } from "../../types/network";
 import { getEnumValuesArray } from "../../utils/get-enum-values-array";
 import { DexBase } from "../DexBase";
@@ -9,7 +9,7 @@ import { AlienbaseV3Fees, HorizonDexV3Fees, SwapBasedAmmV3Fees, ThroneV3Fees, Un
 import { DexInterfaceName, DexType } from "../types/IDexParams";
 import { TPathSegment } from "../types/path";
 
-export interface IPathMakerParams {
+export interface IPoolScraperParams {
     tokenIn: string;
     tokenOut: string;
     network: INetworkConfig;
@@ -17,7 +17,7 @@ export interface IPathMakerParams {
     isDirectPathOnly?: boolean;
 }
 
-export class PathMaker {
+export class PoolScraper {
     public static async getDexPaths(
         {
             tokenIn,
@@ -25,14 +25,20 @@ export class PathMaker {
             network,
             dexIncluded,
             isDirectPathOnly,
-        }: IPathMakerParams,
+        }: IPoolScraperParams,
         settings?: {
             chunkSize: number;
             chunkTimeout?: number;
         }
     ) {
-        const tokenInContract = new ERC20(tokenIn, network);
-        const tokenOutContract = new ERC20(tokenIn, network);
+        const tokenInContract = new ERC20({
+            address: tokenIn,
+            network,
+        });
+        const tokenOutContract = new ERC20({
+            address: tokenOut,
+            network,
+        });
 
         try {
             await Promise.all([
@@ -42,6 +48,7 @@ export class PathMaker {
         } catch (e) {
             throw new Error(`Tokens are not supported. Token In: [#${tokenIn}]; Token Out: [#${tokenOut}]`);
         }
+
 
         const _settings = settings ?? {
             chunkSize: 50,
@@ -61,7 +68,7 @@ export class PathMaker {
             }));
         }
 
-        const validatePathsTask = dexPaths.map(param => async () =>  await this._getValidPath(param));
+        const validatePathsTask = dexPaths.map(param => async () => await this._getValidPath(param));
 
         const validPaths = (await chunk.processInChunksAsync(
             validatePathsTask,
@@ -91,7 +98,7 @@ export class PathMaker {
         isDirectPathOnly?: boolean,
     }) {
         const { type: dexType } = params.dex.dexParams;
-        const weth = new Weth(params.network);
+        const weth = new WETH9({ network: params.network });
         const isWethIncluded =
             params.tokenIn.toLowerCase() === weth.address.toLowerCase() ||
             params.tokenOut.toLowerCase() === weth.address.toLowerCase();
@@ -130,13 +137,14 @@ export class PathMaker {
                                     UniswapV3Fees
             );
 
+            const directPaths = fees.map(fee => (
+                {
+                    dex: params.dex,
+                    path: [params.tokenIn, fee, params.tokenOut],
+                }
+            ));
             if (params.isDirectPathOnly || isWethIncluded) {
-                return fees.map(fee => (
-                    {
-                        dex: params.dex,
-                        path: [params.tokenIn, fee, params.tokenOut],
-                    }
-                ));
+                return directPaths;
             }
 
             const paths = [];
@@ -150,22 +158,25 @@ export class PathMaker {
                     ));
                 }
             }
-            return paths;
+            return [...directPaths, ...paths];
         } else if (dexType === DexType.AerodromeV2) {
+            const directPaths = [
+                {
+                    dex: params.dex,
+                    path: [params.tokenIn, false, params.tokenOut],
+                },
+                {
+                    dex: params.dex,
+                    path: [params.tokenIn, true, params.tokenOut],
+                },
+            ];
             if (params.isDirectPathOnly || isWethIncluded) {
-                return [
-                    {
-                        dex: params.dex,
-                        path: [params.tokenIn, false, params.tokenOut],
-                    },
-                    {
-                        dex: params.dex,
-                        path: [params.tokenIn, true, params.tokenOut],
-                    },
-                ];
+                return directPaths;
             }
 
             return [
+                ...directPaths,
+
                 {
                     dex: params.dex,
                     path: [params.tokenIn, false, weth.address, false, params.tokenOut],

@@ -91,9 +91,9 @@ export enum Network {
 }
 
 export interface INetworkConfig {
-    id: Network,
+    id: Network | number,
     rpcUrl: string,
-    wssUrl: string,
+    wssUrl?: string,
     explorerUrl?: string,
     explorerApiKey?: string,
 }

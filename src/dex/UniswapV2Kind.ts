@@ -21,7 +21,7 @@ import { rocketswapV2Addresses } from "./addresses/uniswap-v2-kind/rocketswap-v2
 import { baseswapV2Addresses } from "./addresses/uniswap-v2-kind/baseswap-v2";
 import { deltaswapV2Addresses } from "./addresses/uniswap-v2-kind/deltaswap-v2";
 import { ringswapV2Addresses } from "./addresses/uniswap-v2-kind/ringswap-v2";
-import { ERC20 } from "../erc20/contracts/ERC20";
+import { ERC20 } from "../erc20/tokens/ERC20";
 import { reverseCopy } from "../utils/reverse-copy";
 
 export class DexBaseKindUniswapV2 extends DexBase {
@@ -146,8 +146,14 @@ export class DexBaseKindUniswapV2 extends DexBase {
         const pairContract = new Contract(pair, pairAbi, this._provider);
         const [reserve0, reserve1, blockTimestampLast] = await pairContract.getReserves();
 
-        const token0 = new ERC20(path[0], this._network);
-        const token1 = new ERC20(path[path.length - 1], this._network);
+        const token0 = new ERC20({
+            address: path[0],
+            network: this._network,
+        });
+        const token1 = new ERC20({
+            address: path[path.length - 1],
+            network: this._network,
+        });
 
         const [decimals0, decimals1] = await Promise.all([
             token0.getDecimals(),
