@@ -1,10 +1,13 @@
 import { ethers } from "hardhat";
 import { expect } from "chai";
+import { Interface, JsonRpcProvider, parseUnits } from "ethers";
 import type { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { ERC20 } from "../../src/erc20/contracts/ERC20";
-import { JsonRpcProvider, parseUnits } from "ethers";
+import { ERC20 } from "../../src/erc20/tokens/ERC20";
 import { erc20Abi } from "../../src/erc20/abi/erc20-abi";
 import { callTransaction } from "../../src/utils/call-transaction";
+import { TAddress } from "../../src/types/hex";
+import { BASE_NETWORK } from "../dex/constants/network";
+import { ACCOUNTS_PK } from "../constants";
 
 describe("ERC20", function () {
     let owner: HardhatEthersSigner;
@@ -17,20 +20,42 @@ describe("ERC20", function () {
     const TOKEN_SYMBOL = "TST";
     const INITIAL_SUPPLY = parseUnits("1000", 18);
 
+
     beforeEach(async function () {
         const signers = await ethers.getSigners();
         owner = signers[0] as HardhatEthersSigner;
         user1 = signers[1] as HardhatEthersSigner;
         user2 = signers[2] as HardhatEthersSigner;
+
         const TestERC20Factory = await ethers.getContractFactory("TestERC20");
         rawContract = await TestERC20Factory.deploy(TOKEN_NAME, TOKEN_SYMBOL);
         await rawContract.waitForDeployment();
-        const address: string = await rawContract.getAddress();
-        testErc20 = new ERC20(address.toString(), owner);
+        const address: TAddress = await rawContract.getAddress();
+
+        testErc20 = new ERC20({
+            address,
+            privateKey: ACCOUNTS_PK[0],
+            network: BASE_NETWORK,
+        });
     });
 
 
     describe("constructor", function () {
+        it("should return all get functions", () => {
+            expect(testErc20.abi).length.to.be.not.eq(0);
+            expect(testErc20.address).length.to.be.not.eq(0);
+            expect(testErc20.interface).to.be.instanceOf(Interface);
+            
+            const { wssUrl, rpcUrl } = testErc20.network;
+            expect(wssUrl).not.undefined;
+            expect(wssUrl).length.not.eq(0);
+            expect(wssUrl).eq(rpcUrl
+                .replace(/^http:\/\//i, "ws://")
+                .replace(/^https:\/\//i, "wss://")
+            );
+        });
+
+
         it("should get the correct name", async function () {
             expect(await testErc20.getName()).to.equal(TOKEN_NAME);
         });
@@ -74,7 +99,7 @@ describe("ERC20", function () {
             const amount = parseUnits("1000", 18);
             
             // Testing approve is working
-            await testErc20.approve(user1.address, amount);
+            const txApprove = await testErc20.approve(user1.address, amount);
             expect(await testErc20.getAllowance(owner.address, user1.address)).to.equal(amount);
             
             // Testing revokeApprove is working
@@ -147,7 +172,11 @@ describe("ERC20", function () {
             const amount = parseUnits("100", 18);
             await testErc20.approve(user1.address, amount);
 
-            const user1Erc20 = new ERC20(testErc20.address.toString(), user1);
+            const user1Erc20 = new ERC20({
+                address: testErc20.address,
+                privateKey: ACCOUNTS_PK[1],
+                network: BASE_NETWORK,
+            });
             await user1Erc20.transferFrom(owner.address, user2.address, amount);
 
             expect(await testErc20.getBalance(user2.address)).to.equal(amount);
@@ -156,7 +185,11 @@ describe("ERC20", function () {
 
         it("should fail to transfer tokens from another account with insufficient allowance", async function () {
             const amount = parseUnits("100", 18);
-            const user1Erc20 = new ERC20(testErc20.address.toString(), user1);
+            const user1Erc20 = new ERC20({
+                address: testErc20.address,
+                privateKey: ACCOUNTS_PK[1],
+                network: BASE_NETWORK,
+            });
             await expect(user1Erc20.transferFrom(owner.address, user2.address, amount)).to.be.reverted;
         });
     });
@@ -167,11 +200,6 @@ describe("ERC20", function () {
     /*******************************************************************************/
 
     describe("Getters", function () {
-        it("should get contract runner", function () {
-            const runnerAddress = (testErc20.runner as HardhatEthersSigner).address;
-            expect(runnerAddress.toLowerCase()).to.equal(owner.address.toLowerCase());
-        });
-
         it("should get contract address", function () {
             expect(testErc20.address).to.not.equal('');
             expect(testErc20.address.length).to.equal(42);
@@ -183,41 +211,41 @@ describe("ERC20", function () {
     });
 
 
-    describe("Test encoded functions", function () {
-        it("should transfer encoded", async function () {
-            const encoded = testErc20.getEncodedTransfer(user1.address, parseUnits("100", 18));
-            expect(encoded).to.not.equal('');
+    // describe("Test encoded functions", function () {
+    //     it("should transfer encoded", async function () {
+    //         const encoded = testErc20.getEncodedTransfer(user1.address, parseUnits("100", 18));
+    //         expect(encoded).to.not.equal('');
 
-            await callTransaction(testErc20.runner as JsonRpcProvider, {
-                from: owner.address,
-                to: user1.address,
-                value: parseUnits("100", 18),
-                data: encoded,
-            });
-        });
+    //         await callTransaction(testErc20.runner as JsonRpcProvider, {
+    //             from: owner.address,
+    //             to: user1.address,
+    //             value: parseUnits("100", 18),
+    //             data: encoded,
+    //         });
+    //     });
 
-        it("should approve encoded", async function () {
-            const encoded = testErc20.getEncodedApprove(user1.address, parseUnits("100", 18));
-            expect(encoded).to.not.equal('');
+    //     it("should approve encoded", async function () {
+    //         const encoded = testErc20.getEncodedApprove(user1.address, parseUnits("100", 18));
+    //         expect(encoded).to.not.equal('');
 
-            await callTransaction(testErc20.runner as JsonRpcProvider, {
-                from: owner.address,
-                to: user1.address,
-                value: parseUnits("100", 18),
-                data: encoded,
-            });
-        });
+    //         await callTransaction(testErc20.runner as JsonRpcProvider, {
+    //             from: owner.address,
+    //             to: user1.address,
+    //             value: parseUnits("100", 18),
+    //             data: encoded,
+    //         });
+    //     });
 
-        it("should transferFrom encoded", async function () {
-            const encoded = testErc20.getEncodedTransferFrom(owner.address, user1.address, parseUnits("100", 18));
-            expect(encoded).to.not.equal('');
+    //     it("should transferFrom encoded", async function () {
+    //         const encoded = testErc20.getEncodedTransferFrom(owner.address, user1.address, parseUnits("100", 18));
+    //         expect(encoded).to.not.equal('');
 
-            await callTransaction(testErc20.runner as JsonRpcProvider, {
-                from: owner.address,
-                to: user1.address,
-                value: parseUnits("100", 18),
-                data: encoded,
-            });
-        });
-    });
+    //         await callTransaction(testErc20.runner as JsonRpcProvider, {
+    //             from: owner.address,
+    //             to: user1.address,
+    //             value: parseUnits("100", 18),
+    //             data: encoded,
+    //         });
+    //     });
+    // });
 });

@@ -22,7 +22,7 @@ import {
 } from "../../src/dex/UniswapV2Kind";
 import { WETH_ADDRESS_BASE, USDC_ADDRESS_BASE } from "./constants/tokens";
 import { BASE_NETWORK } from "./constants/network";
-import { ERC20 } from "../../src/erc20/contracts/ERC20";
+import { ERC20 } from "../../src/erc20/tokens/ERC20";
 import { IxSwapV2 } from "../../src/dex/IxSwapV2";
 
 describe("Uniswap V2 Dexes for Network: Base", function () {

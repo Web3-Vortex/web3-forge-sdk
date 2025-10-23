@@ -4,7 +4,7 @@ import { expect } from "chai";
 import { ZeroAddress, MaxUint256 } from "ethers";
 import { WETH_ADDRESS_BASE, USDC_ADDRESS_BASE } from "./constants/tokens";
 import { BASE_NETWORK } from "./constants/network";
-import { ERC20 } from "../../src/erc20/contracts/ERC20";
+import { ERC20 } from "../../src/erc20/tokens/ERC20";
 import { AerodromeV2 } from "../../src/dex/AerodromeV2";
 
 describe("Aerodrome V2 Dexes for Network: Base", function () {
