@@ -1,5 +1,5 @@
 {
-  "name": "@vortex/web3-forge-sdk",
+  "name": "@web3-vortex/web3-forge-sdk",
   "version": "0.1.0",
   "description": "Lightweight TypeScript Web3 SDK for EVM dapps",
   "license": "MIT",
@@ -57,5 +57,9 @@
     "@ethereumjs/common": "^4.4.0",
     "@ethereumjs/tx": "^5.4.0",
     "@ethereumjs/util": "^9.1.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
   }
 }

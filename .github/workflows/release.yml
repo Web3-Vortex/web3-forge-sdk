@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write   # нужно для Trusted Publishing (OIDC)
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Test
+        run: npm test
+
+      # Проверяем: опубликована ли уже версия из package.json?
+      - name: Should publish?
+        id: should
+        run: |
+          PKG_NAME=$(node -p "require('./package.json').name")
+          PKG_VER=$(node -p "require('./package.json').version")
+          echo "name=$PKG_NAME"        >> $GITHUB_OUTPUT
+          echo "version=$PKG_VER"      >> $GITHUB_OUTPUT
+          PUBLISHED_VER=$(npm view "$PKG_NAME" version || true)
+          echo "published=$PUBLISHED_VER" >> $GITHUB_OUTPUT
+          if [ "$PUBLISHED_VER" = "$PKG_VER" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Publish to npm (Trusted Publishing)
+        if: steps.should.outputs.skip == 'false'
+        run: npm publish
