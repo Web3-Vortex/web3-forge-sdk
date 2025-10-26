@@ -1,4 +1,4 @@
-import { JsonRpcProvider, TransactionRequest } from "ethers";
+import { JsonRpcProvider, type TransactionRequest } from "ethers";
 
 export async function callTransaction(
     runner: JsonRpcProvider,

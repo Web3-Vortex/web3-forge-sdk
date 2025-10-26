@@ -1,11 +1,10 @@
-import { Contract, Wallet, JsonRpcSigner, type ContractRunner, TransactionResponse, JsonRpcProvider, NonceManager, ContractTransactionResponse } from "ethers";
+import { Contract, Wallet, JsonRpcSigner, type ContractRunner, TransactionResponse, JsonRpcProvider, NonceManager } from "ethers";
 import { erc20Abi } from "../abi/erc20-abi";
 import { isObjectAddressable } from "../../utils/is-object-addressable";
-import { INetworkConfig } from "../../types/network";
-import { IAddressable } from "../../types/IAddressable";
-import { TAddress } from "../../types/hex";
-import { IERC20Settings } from "../types";
-import { IToken } from "../types";
+import type { INetworkConfig } from "../../types/network";
+import type { IAddressable } from "../../types/IAddressable";
+import type { TAddress } from "../../types/hex";
+import type { IERC20Settings } from "../types";
 
 export class ERC20 implements IAddressable {
     private readonly _network: INetworkConfig;
@@ -28,7 +27,7 @@ export class ERC20 implements IAddressable {
             { staticNetwork: true }
         );
 
-        if (privateKey !== undefined && privateKey.length > 0) {
+        if (privateKey !== undefined && privateKey !== null && privateKey.length > 0) {
             this._runner = new Wallet(privateKey, provider);
             this._runnerWithNonceManager = new NonceManager(this._runner as Wallet);
             this._contract = new Contract(address, abi, this._runnerWithNonceManager);
@@ -88,26 +87,32 @@ export class ERC20 implements IAddressable {
     /*******************************************************************************/
 
     public async getBalance(address: string): Promise<bigint> {
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._contract.balanceOf(address);
     }
 
     public async getDecimals(): Promise<bigint> {
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._contract.decimals();
     }
 
     public async getSymbol(): Promise<string> {
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._contract.symbol();
     }
 
     public async getName(): Promise<string> {
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._contract.name();
     }
 
     public async getTotalSupply(): Promise<bigint> {
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._contract.totalSupply();
     }
 
     public async getAllowance(owner: TAddress, spender: TAddress): Promise<bigint> {
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._contract.allowance(owner, spender);
     }
 
@@ -121,6 +126,7 @@ export class ERC20 implements IAddressable {
         if(this._runnerWithNonceManager === undefined) {
             throw new Error('Wallet has not been provided');
         }
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._contract.transfer(to, amount);
     }
 
@@ -128,6 +134,7 @@ export class ERC20 implements IAddressable {
         if(this._runnerWithNonceManager === undefined) {
             throw new Error('Wallet has not been provided');
         }
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._contract.transferFrom(from, to, amount);
     }
 
@@ -135,6 +142,7 @@ export class ERC20 implements IAddressable {
         if(this._runnerWithNonceManager === undefined) {
             throw new Error('Wallet has not been provided');
         }
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._contract.approve(spender, amount);
     }
 
@@ -150,6 +158,7 @@ export class ERC20 implements IAddressable {
         }
 
         const oldAllowance = await this.getAllowance(runnerAddress, spender);
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._contract.approve(spender, oldAllowance + amount);
     }
 
@@ -166,10 +175,12 @@ export class ERC20 implements IAddressable {
         }
 
         const newAllowance = oldAllowance > amount ? oldAllowance - amount : 0n;
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._contract.approve(spender, newAllowance);
     }
 
     public async revokeApprove(spender: string): Promise<boolean> {
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._contract.approve(spender, 0);
     }
 

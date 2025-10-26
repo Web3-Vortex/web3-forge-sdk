@@ -1,5 +1,5 @@
 import { FeeMarketEIP1559Transaction, LegacyTransaction, TransactionType } from '@ethereumjs/tx';
-import { AddressLike, BigIntLike, bytesToHex } from '@ethereumjs/util';
+import { type AddressLike, type BigIntLike, bytesToHex } from '@ethereumjs/util';
 import { Common } from '@ethereumjs/common';
 
 

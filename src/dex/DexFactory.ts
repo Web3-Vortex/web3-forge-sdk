@@ -35,7 +35,7 @@ import {
 import { IxSwapV2 } from "./IxSwapV2";
 import { AerodromeV2 } from "./AerodromeV2";
 import { DexInterfaceName } from "./types/IDexParams";
-import { INetworkConfig, Network } from "../types/network";
+import { type INetworkConfig, Network } from "../types/network";
 import { getEnumValuesArray } from "../utils/get-enum-values-array";
 
 export type TCreateDex = (network: INetworkConfig) => DexBase;

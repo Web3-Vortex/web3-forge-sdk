@@ -1,0 +1,19 @@
+{
+  "extends": "@tsconfig/strictest/tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist",
+    "sourceMap": true,
+    "stripInternal": true,
+    "skipLibCheck": true,
+    "rootDir": "src",
+    "verbatimModuleSyntax": true,
+    "esModuleInterop": true,
+    "exactOptionalPropertyTypes": false,
+  },
+  "include": ["src"]
+}

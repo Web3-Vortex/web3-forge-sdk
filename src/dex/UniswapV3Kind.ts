@@ -1,6 +1,6 @@
 import { Contract, formatUnits, id, MaxUint256, parseUnits, solidityPacked, ZeroAddress } from "ethers";
 
-import { INetworkConfig } from "../types/network";
+import type { INetworkConfig } from "../types/network";
 import { DexBase } from "./DexBase";
 import { DexInterfaceName, DexType } from "./types/IDexParams";
 import { erc20Abi } from "../erc20/abi/erc20-abi";
@@ -50,7 +50,12 @@ export class DexBaseKindUniswapV3 extends DexBase {
             },
         });
 
-        if (quoterAddress_ !== ZeroAddress || quoterAddress_ !== '') {
+        if (
+            quoterAddress_ !== undefined &&
+            quoterAddress_ !== null &&
+            quoterAddress_ !== ZeroAddress &&
+            quoterAddress_ !== ''
+        ) {
             this._quoterContract = new Contract(
                 quoterAddress_,
                 overrides?.quoterAbi ?? quoterAbi,
@@ -99,7 +104,9 @@ export class DexBaseKindUniswapV3 extends DexBase {
                 token0,
                 token1,
             ] = await Promise.all([
+                // @ts-expect-error: ABI methods are attached at runtime by ethers
                 pairContract.token0(),
+                // @ts-expect-error: ABI methods are attached at runtime by ethers
                 pairContract.token1(),
             ]);
 
@@ -110,7 +117,9 @@ export class DexBaseKindUniswapV3 extends DexBase {
                 balance0,
                 balance1
             ] = await Promise.all([
+                // @ts-expect-error: ABI methods are attached at runtime by ethers
                 token0Contract.balanceOf(pair),
+                // @ts-expect-error: ABI methods are attached at runtime by ethers
                 token1Contract.balanceOf(pair),
             ]);
 
@@ -138,10 +147,13 @@ export class DexBaseKindUniswapV3 extends DexBase {
         const encodedPath = this._encodePath(path);
 
         const [decimals, decimalsQuote]: [bigint, bigint] = await Promise.all([
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             token.decimals(),
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             tokenQuote.decimals()
         ]);
 
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         const amountsOut: bigint = (await this._quoterContract.quoteExactInput.staticCall(encodedPath, parseUnits('1', decimals)))[0];
 
         return +formatUnits(amountsOut, decimalsQuote);
@@ -156,6 +168,7 @@ export class DexBaseKindUniswapV3 extends DexBase {
         const token1 = path[path.length - 1] as string;
         const fee = path[1] as number;
 
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._factoryContract.getPool(token0, token1, fee);
     }
 
@@ -174,7 +187,7 @@ export class DexBaseKindUniswapV3 extends DexBase {
         throw new Error('Not implemented');
     }
 
-    public async getPoolAddressByIndex(index: number): Promise<string> {
+    public async getPoolAddressByIndex(_: number): Promise<string> {
         throw new Error('Not implemented');
     }
 
@@ -190,9 +203,13 @@ export class DexBaseKindUniswapV3 extends DexBase {
         const poolContract = new Contract(poolAddress, poolAbi, this._provider);
 
         const [sqrtPriceX96Struct, liquidity, token0, token1] = await Promise.all([
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             poolContract.slot0(),
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             poolContract.liquidity(),
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             poolContract.token0(),
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             poolContract.token1(),
         ]);
 
@@ -223,6 +240,7 @@ export class DexBaseKindUniswapV3 extends DexBase {
     }
 
     public async getFactoryAddress(): Promise<string> {
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._routerContract.factory();
     }
 
@@ -253,7 +271,7 @@ export class DexBaseKindUniswapV3 extends DexBase {
         topHalf: string,
         bottomHalf: string,
     } {
-        const deadline = Math.floor(Date.now() / 1000) + 10000;
+        // const deadline = Math.floor(Date.now() / 1000) + 10000;
         const amountOutMin = slippage ? amountsIn * BigInt(10000 - slippage) / BigInt(10000) : 0;
 
         const data = this._routerContract.interface.encodeFunctionData(
@@ -287,6 +305,7 @@ export class DexBaseKindUniswapV3 extends DexBase {
         }
     ) {
         const deadline = Math.floor(Date.now() / 1000) + 600;
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._routerContract.swapExactTokensForTokens.staticCallResult(
             amountsIn,
             0,
@@ -371,86 +390,86 @@ export class DexBaseKindUniswapV3 extends DexBase {
         return solidityPacked(types, path);
     }
 
-    private async _getCreatedPools(): Promise<{
-        token0: string;
-        token1: string;
-        fee: number;
-        tickSpacing: number;
-        pool: string;
-        blockNumber: number;
-        transactionHash: string;
-    }[]> {
-        // const filter = this._factoryContract.filters.PoolCreated();
-        // const latestBlock = await this._provider.getBlockNumber();
+    // private async _getCreatedPools(): Promise<{
+    //     token0: string;
+    //     token1: string;
+    //     fee: number;
+    //     tickSpacing: number;
+    //     pool: string;
+    //     blockNumber: number;
+    //     transactionHash: string;
+    // }[]> {
+    //     // const filter = this._factoryContract.filters.PoolCreated();
+    //     // const latestBlock = await this._provider.getBlockNumber();
 
-        // const results: {
-        //     token0: string;
-        //     token1: string;
-        //     fee: number;
-        //     tickSpacing: number;
-        //     pool: string;
-        //     blockNumber: number;
-        //     transactionHash: string;
-        // }[] = [];
+    //     // const results: {
+    //     //     token0: string;
+    //     //     token1: string;
+    //     //     fee: number;
+    //     //     tickSpacing: number;
+    //     //     pool: string;
+    //     //     blockNumber: number;
+    //     //     transactionHash: string;
+    //     // }[] = [];
 
-        // let fromBlock = 0;
-        // let batchSize = 10000;
-        // const minBatchSize = 100;
+    //     // let fromBlock = 0;
+    //     // let batchSize = 10000;
+    //     // const minBatchSize = 100;
 
-        // while (fromBlock <= latestBlock) {
-        //     const toBlock = Math.min(fromBlock + batchSize - 1, latestBlock);
+    //     // while (fromBlock <= latestBlock) {
+    //     //     const toBlock = Math.min(fromBlock + batchSize - 1, latestBlock);
 
-        //     try {
-        //         const events = await this._factoryContract.queryFilter(filter, fromBlock, toBlock);
+    //     //     try {
+    //     //         const events = await this._factoryContract.queryFilter(filter, fromBlock, toBlock);
 
-        //         for (const event of events) {
-        //             if (event instanceof EventLog) {
-        //                 const { token0, token1, fee, tickSpacing, pool } = event.args;
-        //                 results.push({
-        //                     token0,
-        //                     token1,
-        //                     fee,
-        //                     tickSpacing,
-        //                     pool,
-        //                     blockNumber: event.blockNumber,
-        //                     transactionHash: event.transactionHash,
-        //                 });
-        //             }
-        //         }
+    //     //         for (const event of events) {
+    //     //             if (event instanceof EventLog) {
+    //     //                 const { token0, token1, fee, tickSpacing, pool } = event.args;
+    //     //                 results.push({
+    //     //                     token0,
+    //     //                     token1,
+    //     //                     fee,
+    //     //                     tickSpacing,
+    //     //                     pool,
+    //     //                     blockNumber: event.blockNumber,
+    //     //                     transactionHash: event.transactionHash,
+    //     //                 });
+    //     //             }
+    //     //         }
 
-        //         // Move to the next block range
-        //         fromBlock = toBlock + 1;
-        //         // Optional: reset batch size to default if it was reduced
-        //         batchSize = 10000; 
+    //     //         // Move to the next block range
+    //     //         fromBlock = toBlock + 1;
+    //     //         // Optional: reset batch size to default if it was reduced
+    //     //         batchSize = 10000; 
 
-        //     } catch (err: any) {
-        //         const isRangeError = (e: any) => {
-        //             const message = JSON.stringify(e).toLowerCase();
-        //             return message.includes('block range') || 
-        //                    message.includes('query returned more than') ||
-        //                    message.includes('400 bad request') ||
-        //                    e.error?.code === -32000;
-        //         };
+    //     //     } catch (err: any) {
+    //     //         const isRangeError = (e: any) => {
+    //     //             const message = JSON.stringify(e).toLowerCase();
+    //     //             return message.includes('block range') || 
+    //     //                    message.includes('query returned more than') ||
+    //     //                    message.includes('400 bad request') ||
+    //     //                    e.error?.code === -32000;
+    //     //         };
 
-        //         if (isRangeError(err) && batchSize / 2 >= minBatchSize) {
-        //             const newBatchSize = Math.floor(batchSize / 2);
-        //             console.warn(
-        //                 `Query for logs in [${fromBlock}, ${toBlock}] failed. Reducing batch size from ${batchSize} to ${newBatchSize}.`
-        //             );
-        //             batchSize = newBatchSize;
-        //             await new Promise(res => setTimeout(res, 1000)); // Wait before retrying
-        //         } else {
-        //             console.error(`Unrecoverable error fetching logs in range [${fromBlock}, ${toBlock}] with batch size ${batchSize}:`, err);
-        //             throw err;
-        //         }
-        //     }
-        // }
+    //     //         if (isRangeError(err) && batchSize / 2 >= minBatchSize) {
+    //     //             const newBatchSize = Math.floor(batchSize / 2);
+    //     //             console.warn(
+    //     //                 `Query for logs in [${fromBlock}, ${toBlock}] failed. Reducing batch size from ${batchSize} to ${newBatchSize}.`
+    //     //             );
+    //     //             batchSize = newBatchSize;
+    //     //             await new Promise(res => setTimeout(res, 1000)); // Wait before retrying
+    //     //         } else {
+    //     //             console.error(`Unrecoverable error fetching logs in range [${fromBlock}, ${toBlock}] with batch size ${batchSize}:`, err);
+    //     //             throw err;
+    //     //         }
+    //     //     }
+    //     // }
 
-        // return results;
+    //     // return results;
 
-        // TODO: Implement this
-        return [];
-    }
+    //     // TODO: Implement this
+    //     return [];
+    // }
 }
 
 

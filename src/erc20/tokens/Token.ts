@@ -1,5 +1,5 @@
 import { erc20Abi } from "../abi";
-import { IERC20Settings, IToken, ITokenable } from "../types";
+import type { IERC20Settings, IToken, ITokenable } from "../types";
 import { ERC20 } from "./ERC20"
 
 export class Token extends ERC20 implements ITokenable {

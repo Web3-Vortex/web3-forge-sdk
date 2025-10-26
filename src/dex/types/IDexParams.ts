@@ -1,4 +1,4 @@
-import { INetworkConfig } from "../../types/network";
+import type { INetworkConfig } from "../../types/network";
 
 export interface IDexContract {
     address: string,

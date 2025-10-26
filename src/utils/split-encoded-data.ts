@@ -39,12 +39,15 @@ export function splitEncodedData(data: string): {
     if (!data.startsWith('0x')) {
         throw new Error("Invalid data format: string must start with '0x'.");
     }
+    if (data.length < 3) {
+        throw new Error("Data is too small");
+    }
 
     const hexPart = data.slice(2);
     const invalidCharIndices: number[] = [];
     
     for (let i = 0; i < hexPart.length; i++) {
-        const char = hexPart[i];
+        const char: string = hexPart[i]!;
         if (!/^[0-9a-fA-F]$/.test(char)) {
             invalidCharIndices.push(i + 2); // +2 для учета префикса '0x'
         }

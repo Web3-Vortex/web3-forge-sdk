@@ -1,16 +1,61 @@
 {
-  "name": "hardhat-project",
+  "name": "@vortex/web3-forge-sdk",
+  "version": "0.1.0",
+  "description": "Lightweight TypeScript Web3 SDK for EVM dapps",
+  "license": "MIT",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsup",
+    "clean": "rimraf dist",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "release": "changeset publish",
+    "prepublishOnly": "npm run clean && npm run build && npm run test"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "peerDependenciesMeta": {
+    "ethers": {
+      "optional": false
+    }
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@openzeppelin/contracts": "^5.4.0",
+    "@tsconfig/strictest": "^2.0.6",
     "@types/glob": "^8.1.0",
+    "dotenv": "^17.2.0",
+    "eslint": "^9.38.0",
+    "ethers": "^6.15.0",
     "glob": "^11.0.3",
-    "hardhat": "^2.26.0"
+    "hardhat": "^2.26.0",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.5.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.3"
+  },
+  "peerDependencies": {
+    "ethers": "^6.15.0"
   },
   "dependencies": {
     "@ethereumjs/common": "^4.4.0",
     "@ethereumjs/tx": "^5.4.0",
-    "@ethereumjs/util": "^9.1.0",
-    "@openzeppelin/contracts": "^5.4.0",
-    "dotenv": "^17.2.0"
+    "@ethereumjs/util": "^9.1.0"
   }
 }

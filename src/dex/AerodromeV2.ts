@@ -1,5 +1,5 @@
 import { Contract, parseUnits, formatUnits, ZeroAddress, id } from "ethers";
-import { INetworkConfig } from "../types/network";
+import type { INetworkConfig } from "../types/network";
 import { erc20Abi } from "../erc20/abi/erc20-abi";
 import { aerodromeV2RouterAbi, aerodromeV2FactoryAbi, aerodromeV2CLFactoryAbi, aerodromeV2PoolAbi, aerodromeV2CLPoolAbi } from "./abi/aerodrome";
 import { aerodromeV2Addresses } from "./addresses/uniswap-v2-kind/aerodrome-v2";
@@ -74,7 +74,7 @@ export class AerodromeV2 extends DexBase {
                     continue;
                 }
                 
-                const pairContract = new Contract(pair, aerodromeV2PoolAbi, this._provider);
+                const pairContract = new Contract(pair, aerodromeV2PoolAbi, this._provider) as any;
     
                 const [
                     tokens,
@@ -99,8 +99,8 @@ export class AerodromeV2 extends DexBase {
     // в параметр path вставляем два токена для находа пары
     // цена будет возвращаться по первому токену из пары вставленному в path
     public async getTokenPrice(path: (string | boolean)[]): Promise<number> {
-        const token = new Contract(path[0] as string, erc20Abi, this._provider);
-        const tokenQuote = new Contract(path[path.length - 1] as string, erc20Abi, this._provider);
+        const token = new Contract(path[0] as string, erc20Abi, this._provider) as any;
+        const tokenQuote = new Contract(path[path.length - 1] as string, erc20Abi, this._provider) as any;
 
         const parsedPath = this._parsePath(path);
 
@@ -108,12 +108,14 @@ export class AerodromeV2 extends DexBase {
             token.decimals(),
             tokenQuote.decimals()
         ]);
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         const amountsOut: bigint = (await this._routerContract.getAmountsOut(parseUnits('1', decimals), parsedPath))[0];
 
         return +formatUnits(amountsOut, decimalsQuote);
     }
 
     public async getFactoryAddress(): Promise<string> {
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._routerContract.defaultFactory();
     }
 
@@ -122,7 +124,9 @@ export class AerodromeV2 extends DexBase {
         factoryPoolCount: number,
     }> {
         const [clCount, factoryCount] = await Promise.all([
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             this._clfactoryContract.allPoolsLength(),
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             this._factoryContract.allPoolsLength(),
         ]);
 
@@ -152,6 +156,7 @@ export class AerodromeV2 extends DexBase {
         }
 
         if (index >= clFactoryPoolCountMinusOne && index <= factoryPoolCountMinusOne) {
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             const clFactoryPool = await this._factoryContract.allPools(index);
 
             return {
@@ -159,6 +164,7 @@ export class AerodromeV2 extends DexBase {
                 clPool: clFactoryPool,
             };
         } else if (index >= factoryPoolCountMinusOne && index <= clFactoryPoolCountMinusOne) {
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             const clFactoryPool = await this._factoryContract.allPools(index);
 
             return {
@@ -168,7 +174,9 @@ export class AerodromeV2 extends DexBase {
         }
 
         const [clFactoryPool, clPool] = await Promise.all([
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             this._clfactoryContract.allPools(index),
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             this._factoryContract.allPools(index),
         ]);
 
@@ -182,6 +190,7 @@ export class AerodromeV2 extends DexBase {
         const isFeePool = typeof path[1] !== 'boolean';
 
         if (isFeePool) {
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             return await this._clfactoryContract.getPool(
                 path[0],
                 path[path.length - 1],
@@ -189,6 +198,7 @@ export class AerodromeV2 extends DexBase {
             );
         }
 
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._factoryContract["getPool(address,address,bool)"](
             path[0],
             path[path.length - 1],
@@ -268,6 +278,7 @@ export class AerodromeV2 extends DexBase {
 
         if (!isFeePool) {
             const pairContract = new Contract(pair, aerodromeV2PoolAbi, this._provider);
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             const [reserve0, reserve1, blockTimestampLast] = await pairContract.getReserves();
             const [decimals0, decimals1] = await Promise.all([
                 token0.getDecimals(),
@@ -283,7 +294,9 @@ export class AerodromeV2 extends DexBase {
 
         const poolContract = new Contract(pair, aerodromeV2CLPoolAbi, this._provider);
         const [sqrtPriceX96Struct, liquidity] = await Promise.all([
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             poolContract.slot0(),
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             poolContract.liquidity(),
         ]);
 
@@ -310,7 +323,7 @@ export class AerodromeV2 extends DexBase {
         };
     }
 
-    public async simulateSwap<T>(
+    public async simulateSwap(
         from: string,
         amountsIn: bigint,
         path: (string | boolean)[],
@@ -323,6 +336,7 @@ export class AerodromeV2 extends DexBase {
     ) {
         const deadline = Math.floor(Date.now() / 1000) + 10000;
 
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         const data = await this._routerContract.swapExactTokensForTokens.staticCallResult(
             amountsIn,
             0,

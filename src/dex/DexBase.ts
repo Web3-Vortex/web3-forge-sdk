@@ -8,8 +8,8 @@ import {
     type DexType,
     type IDexParams
 } from "./types/IDexParams";
-import { TPathSegment } from "./types/path";
-import { INetworkConfig } from "../types/network";
+import type { TPathSegment } from "./types/path";
+import type { INetworkConfig } from "../types/network";
 
 export abstract class DexBase {
     protected readonly _provider: JsonRpcProvider;
@@ -42,8 +42,8 @@ export abstract class DexBase {
             }
         );
         
-        this._factoryContract = new Contract(params.factory.address, params.factory.abi, this._provider);
-        this._routerContract = new Contract(params.router.address, params.router.abi, this._provider);
+        this._factoryContract = new Contract(params.factory.address, params.factory.abi, this._provider) as any;
+        this._routerContract = new Contract(params.router.address, params.router.abi, this._provider) as any;
     }
 
     public get routerAddress(): string {

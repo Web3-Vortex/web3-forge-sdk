@@ -1,7 +1,7 @@
-import { TAddress } from "../../types/hex";
+import type { TAddress } from "../../types/hex";
+import type { IERC20Settings } from "../types";
 import { Network } from "../../types/network";
 import { weth9abi } from "../abi";
-import { IERC20Settings } from "../types";
 import { Token } from "./Token";
 
 const wethAddresses = new Map<Network, string>([
@@ -30,11 +30,13 @@ export class WETH9 extends Token {
     }
 
     public async deposit(amount: bigint) {
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         const tx = await this._contract.deposit({ value: amount });
         return tx;
     }
 
     public async withdraw(amount: bigint) {
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         const tx = await this._contract.withdraw(amount);
         return tx;
     }

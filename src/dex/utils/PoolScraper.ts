@@ -1,13 +1,13 @@
 
 import chunk from "../../utils/chunk";
 import { WETH9, ERC20 } from "../../erc20";
-import { INetworkConfig } from "../../types/network";
+import type { INetworkConfig } from "../../types/network";
+import type { TPathSegment } from "../types/path";
 import { getEnumValuesArray } from "../../utils/get-enum-values-array";
 import { DexBase } from "../DexBase";
 import { DexFactory } from "../DexFactory";
 import { AlienbaseV3Fees, HorizonDexV3Fees, SwapBasedAmmV3Fees, ThroneV3Fees, UniswapV3Fees, WagmiV3Fees } from "../types/fees";
 import { DexInterfaceName, DexType } from "../types/IDexParams";
-import { TPathSegment } from "../types/path";
 
 export interface IPoolScraperParams {
     tokenIn: string;

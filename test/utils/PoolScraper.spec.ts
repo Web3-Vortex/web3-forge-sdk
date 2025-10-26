@@ -1,7 +1,7 @@
 import { PoolScraper } from "../../src/dex/utils/PoolScraper";
 import { Network } from "../../src/types/network";
 import { DexInterfaceName } from "../../src/dex/types/IDexParams";
-import { OVER_ADDRESS_BASE, USDC_ADDRESS_BASE, VIRTUAL_ADDRESS_BASE, WETH_ADDRESS_BASE } from "../dex/constants/tokens";
+import { NOICE_ADDRESS_BASE, USDC_ADDRESS_BASE, } from "../dex/constants/tokens";
 import { BASE_NETWORK } from "../dex/constants/network";
 
 describe("PoolScraper", function () {
@@ -14,7 +14,7 @@ describe("PoolScraper", function () {
         const paths = await PoolScraper.getDexPaths(
             {
                 tokenIn: USDC_ADDRESS_BASE,
-                tokenOut: "0xff45161474c39cb00699070dd49582e417b57a7e",
+                tokenOut: NOICE_ADDRESS_BASE,
                 network: BASE_NETWORK,
                 dexIncluded: [
                     DexInterfaceName.AerodromeV2,
@@ -30,7 +30,7 @@ describe("PoolScraper", function () {
                     // DexInterfaceName.KinetixV3,
                     // DexInterfaceName.DackieSwapV3,
                     // DexInterfaceName.WagmiV3,
-                    // DexInterfaceName.AlienBaseV3,
+                    DexInterfaceName.AlienBaseV3,
 
                     // DexInterfaceName.AlienBaseArea51V2,
                     // DexInterfaceName.BaseSwapV2,
@@ -53,6 +53,8 @@ describe("PoolScraper", function () {
             settings
         );
 
-        console.log(paths)
+
+        console.log("Finded pools:", paths.length)
+        console.log("Firts pool:", paths[1])
     });
 });

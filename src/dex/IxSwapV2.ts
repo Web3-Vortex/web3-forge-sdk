@@ -1,5 +1,5 @@
-import { Contract, parseUnits, formatUnits, MaxUint256, id } from "ethers";
-import { INetworkConfig } from "../types/network";
+import { Contract, parseUnits, formatUnits, MaxUint256 } from "ethers";
+import type { INetworkConfig } from "../types/network";
 import { ixswapV2Addresses } from "./addresses/uniswap-v2-kind/ixswap-v2";
 import { DexBaseKindUniswapV2 } from "./UniswapV2Kind";
 import { routerAbi } from "./abi/ixswap-v2";
@@ -22,27 +22,38 @@ export class IxSwapV2 extends DexBaseKindUniswapV2 {
         name?: DexInterfaceName,
     }) {
         const addresses = ixswapV2Addresses.get(network.id)!;
+        const {
+            routerAddress = addresses.router,
+            factoryAddress = addresses.factory,
+            name = DexInterfaceName.IXSwap,
+        } = overrides ?? {};
         super(
-            overrides?.routerAddress ?? addresses.router,
-            overrides?.factoryAddress ?? addresses.factory,
+            routerAddress as string,
+            factoryAddress as string,
             network,
-            overrides?.name ?? DexInterfaceName.IXSwap,
-            routerAbi,
+            name,
+            routerAbi
         );
     }
 
     // в параметр path вставляем два токена для находа пары
     // цена будет возвращаться по первому токену из пары вставленному в path
-    public async getTokenPrice(path: string[]): Promise<number> {
+    public override async getTokenPrice(path: string[]): Promise<number> {
+        if(path.length < 2) {
+            throw new Error('path length should be at least 2');
+        }
         const secPath = Array.from({ length: path.length }, () => false);
-        const token = new Contract(path[0], erc20Abi, this._provider);
-        const tokenQuote = new Contract(path[path.length - 1], erc20Abi, this._provider);
+        const token = new Contract(path[0] as string, erc20Abi, this._provider);
+        const tokenQuote = new Contract(path[path.length - 1] as string, erc20Abi, this._provider);
 
         const [decimals, decimalsQuote] = await Promise.all([
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             token.decimals(),
+            // @ts-expect-error: ABI methods are attached at runtime by ethers
             tokenQuote.decimals()
         ]);
 
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         const amountsOut = await this._routerContract.getAmountsOut(
             parseUnits('1', decimals),
             path,
@@ -52,7 +63,7 @@ export class IxSwapV2 extends DexBaseKindUniswapV2 {
         return +formatUnits(amountsOut[amountsOut.length - 1], decimalsQuote);
     }
 
-    public async simulateSwap<T>(
+    public override async simulateSwap<T>(
         from: string,
         amountsIn: bigint,
         path: T[],
@@ -63,7 +74,8 @@ export class IxSwapV2 extends DexBaseKindUniswapV2 {
             maxPriorityFeePerGas?: number,
         }
     ) {
-        const deadline = Math.floor(Date.now() / 1000) + 600;
+        // const deadline = Math.floor(Date.now() / 1000) + 600;
+        // @ts-expect-error: ABI methods are attached at runtime by ethers
         return await this._routerContract.swapExactTokensForTokens.staticCallResult(
             amountsIn,
             0,
@@ -79,7 +91,7 @@ export class IxSwapV2 extends DexBaseKindUniswapV2 {
     }
 
 
-    public getEncodedSwap<T>(
+    public override getEncodedSwap<T>(
         amountsIn: bigint,
         path: T[],
         sendTo: string,
@@ -89,7 +101,7 @@ export class IxSwapV2 extends DexBaseKindUniswapV2 {
         topHalf: string,
         bottomHalf: string,
     } {
-        const deadline = Math.floor(Date.now() / 1000) + 10000;
+        // const deadline = Math.floor(Date.now() / 1000) + 10000;
         const amountOutMin = slippage ? amountsIn * BigInt(10000 - slippage) / BigInt(10000) : 0;
 
         const data = this._routerContract.interface.encodeFunctionData(
