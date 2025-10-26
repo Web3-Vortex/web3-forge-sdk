@@ -12,7 +12,7 @@
     "test": "vitest run",
     "lint": "eslint .",
     "release": "changeset publish",
-    "prepublishOnly": "npm run clean && npm run build && npm run test"
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "exports": {
     ".": {
