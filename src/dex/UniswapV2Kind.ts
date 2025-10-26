@@ -58,7 +58,7 @@ export class DexBaseKindUniswapV2 extends DexBase {
         const splitedPaths = this.splitPath(path);
 
         if(splitedPaths.length === 0) {
-            throw new Error('No allowed paths provided');
+            throw new Error('No allowed paths providen');
         }
 
         const poolData: {
