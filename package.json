@@ -1,6 +1,6 @@
 {
   "name": "@web3-vortex/web3-forge-sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Lightweight TypeScript Web3 SDK for EVM dapps",
   "license": "MIT",
   "main": "./dist/index.cjs",
