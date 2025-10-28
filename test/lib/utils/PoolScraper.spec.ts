@@ -1,6 +1,7 @@
 import { NOICE_ADDRESS_BASE, USDC_ADDRESS_BASE, } from "../../dex/constants/tokens";
 import { BASE_NETWORK } from "../../dex/constants/network";
-import { DexInterfaceName, PoolScraper } from "../../../dist";
+// import { DexInterfaceName, PoolScraper } from "../../../dist";
+import { DexInterfaceName, PoolScraper } from "@web3-vortex/web3-forge-sdk";
 
 describe("PoolScraper", function () {
     it("Should make paths for dexes", async function () {
